@@ -5,6 +5,18 @@ pragma solidity 0.8.18;
 import "./IERC4907.sol";
 
 interface IMonoNFT is IERC4907 {
+    // The status of monoNFT
+    /// @param IN_AUCTION: オークション中, In auction
+    /// @param CONFIRMED: 落札者確定, Auction ended
+    /// @param CLAIMED: 支払完了 使用中, In use
+    /// @param DEPRECATED: 廃止, Deprecated
+    enum MonoNFTStatus {
+        IN_AUCTION,
+        CONFIRMED,
+        CLAIMED,
+        DEPRECATED
+    }
+
     // The struct of monoNFT
     /// @param donor: monoの寄贈者, Donor of the mono
     /// @param expiresDuration: monoNFTのデフォルトの利用権保有期間, Default expires duration of the monoNFT
@@ -13,6 +25,7 @@ interface IMonoNFT is IERC4907 {
         address donor;
         uint64 expiresDuration;
         string uri;
+        MonoNFTStatus status;
     }
 
     // Emit when a winner of an auction is confirmed.
@@ -49,11 +62,17 @@ interface IMonoNFT is IERC4907 {
     /// @param tokenId: NFTのトークンID, The token id of the nft
     function claim(uint256 tokenId) external;
 
+    // Update the status of an monoNFT
+    /// @param tokenId: NFTのトークンID, The token id of the nft
+    /// @param status: NFTのステータス, The status of the monoNFT
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function updateMonoNFTStatus(
+        uint256 tokenId,
+        MonoNFTStatus status
+    ) external;
+
     // Get the monoNFTs
     function getNFTs() external view returns (monoNFT[] memory);
-
-    // Get the expired monoNFT tokenIds
-    function getExpiredNFTs() external view returns (uint256[] memory);
 
     // Get the token metadata of an monoNFT
     /// @param tokenId: NFTのトークンID, The token id of the nft
