@@ -71,6 +71,11 @@ interface IMonoNFT is IERC4907 {
         MonoNFTStatus status
     ) external;
 
+    // Get expiration of an monoNFT
+    /// @param tokenId: NFTのトークンID, The token id of the nft
+    /// @dev ERC4907のuserExpiresとblocktimestampの差分計算で使用期限切れかどうかのboolを返す
+    function isExpired(uint256 tokenId) external view returns (bool);
+
     // Get the monoNFTs
     function getNFTs() external view returns (monoNFT[] memory);
 
