@@ -1,6 +1,6 @@
-pragma solidity 0.8.18;
-
 // SPDX-License-Identifier: MIT
+
+pragma solidity 0.8.18;
 
 import "./IERC4907.sol";
 
@@ -46,6 +46,7 @@ interface IMonoNFT is IERC4907 {
     /// @param price: オークションの落札価格, The price of an auction
     /// @param expires: 利用権の有効期限、寄贈者が設定した期間をつかって算出, The expires of the user, calculated using the expiresDuration of the monoNFT
     /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    /// @dev winnerがオークションメンバーNFTを持っているかのチェック, Check whether the winner has the auction member NFT
     function confirmWinner(
         address winner,
         uint256 tokenId,
@@ -60,6 +61,8 @@ interface IMonoNFT is IERC4907 {
 
     // User of an NFT is changed and community token payment is executed
     /// @param tokenId: NFTのトークンID, The token id of the nft
+    /// @dev msg.senderがオークションメンバーNFTを持っているかのチェック, Check whether the msg.sender has the auction member NFT
+    /// @dev depositコントラクトのsendToTreasury関数を呼び出す, Call the sendToTreasury function of the deposit contract
     function claim(uint256 tokenId) external;
 
     // Update the status of an monoNFT
