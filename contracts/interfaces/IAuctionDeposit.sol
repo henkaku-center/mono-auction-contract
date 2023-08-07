@@ -21,7 +21,7 @@ interface IAuctionDeposit {
     event SendToTreasury(address indexed user, uint256 amount);
 
     // Deposit Community Token to the contract
-    function deposit() external payable;
+    function deposit(uint256 amount) external;
 
     // Withdraw Community Token from the contract
     function withdraw(uint256 amount) external;
