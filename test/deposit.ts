@@ -10,11 +10,15 @@ describe("AuctionDeposit", function () {
   beforeEach(async function () {
     accounts = await ethers.getSigners();
 
+    const initialSupply = ethers.utils.parseEther("1000000");
     const Token = await ethers.getContractFactory("MockERC20");
-    token = await Token.deploy();
+    token = await Token.deploy("My Token", "MTK", initialSupply);
+
+    const tokenAddress: string = token.address;
+    console.log("Token Address:", token.address);
 
     const Auction = await ethers.getContractFactory("AuctionDeposit");
-    auction = await Auction.deploy();
+    auction = await Auction.deploy(tokenAddress);
 
     await token.deployed();
     await auction.deployed();
