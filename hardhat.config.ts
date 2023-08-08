@@ -1,13 +1,8 @@
-import { HardhatUserConfig } from 'hardhat/config'
-import '@nomicfoundation/hardhat-toolbox'
+import { HardhatUserConfig } from 'hardhat/config';
+import '@nomiclabs/hardhat-ethers'; // ethersプラグインをインポート
+import "@nomiclabs/hardhat-waffle";
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.18',
-}
-
-export default config
-
-module.exports = {
   solidity: '0.8.18',
   networks: {
     hardhat: {
@@ -17,4 +12,6 @@ module.exports = {
   mocha: {
     timeout: 20000,
   },
-}
+};
+
+export default config;
