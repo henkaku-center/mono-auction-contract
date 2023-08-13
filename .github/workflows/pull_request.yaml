@@ -24,10 +24,6 @@ jobs:
         with:
           ref: ${{ github.base_ref }}
           clean: false
-      - name: Checkout Target Branch
-        uses: actions/checkout@v3
-        with:
-          clean: false
       - name: Lint
         run: yarn lint
       - name: Test
