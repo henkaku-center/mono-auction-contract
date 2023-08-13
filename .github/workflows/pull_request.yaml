@@ -19,17 +19,12 @@ jobs:
           cache: yarn
       - name: Install packages
         run: yarn
-      - name: Checkout Base Branch
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.base_ref }}
-          clean: false
       - name: Lint
         run: yarn lint
       - name: Test
         run: yarn test
       - name: Check Target Contract Size
-        run: echo "\`\`\`\n $(yarn run hardhat size-contracts)" > ./comments
+        run: echo "\`\`\`\n $(yarn hardhat size-contracts)" > ./comments
       - name: Post comments
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
