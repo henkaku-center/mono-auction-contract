@@ -5,6 +5,7 @@ pragma solidity ^0.8.18;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IAuctionDeposit.sol";
+import "./MockERC20.sol";
 
 contract AuctionDeposit is IAuctionDeposit {
     using SafeERC20 for IERC20;
@@ -20,18 +21,24 @@ contract AuctionDeposit is IAuctionDeposit {
     }
 
     function deposit(uint256 amount) external override {
-        uint256 balanceBefore = token.balanceOf(address(this));
-        uint256 balanceAfter = token.balanceOf(address(this));
-        require(
-            balanceAfter - balanceBefore == amount,
-            "Transferred amount does not match requested amount"
-        );
+    require(amount > 0, "Amount should be greater than 0");
+    require(_deposits[msg.sender] + amount <= MAX_DEPOSIT, "Deposit limit exceeded");
 
-        _deposits[msg.sender] += amount;
-        require(_deposits[msg.sender] <= MAX_DEPOSIT, "Deposit limit exceeded");
+    uint256 balanceBefore = token.balanceOf(address(this));
 
-        emit Deposit(msg.sender, amount);
-    }
+    MockERC20(address(token)).transferFrom(msg.sender, address(this), amount);
+
+    uint256 balanceAfter = token.balanceOf(address(this));
+    require(
+        balanceAfter - balanceBefore == amount,
+        "ERC20 Token transfer failed"
+    );
+
+    _deposits[msg.sender] += amount;
+
+    emit Deposit(msg.sender, amount);
+}
+
 
     //仮で入れてるのであとから実装し直す必要あり
     function withdraw(uint256 amount) external override {
