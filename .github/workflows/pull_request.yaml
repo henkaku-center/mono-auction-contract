@@ -1,0 +1,41 @@
+name: Check the source code
+on:
+  pull_request:
+jobs:
+  test:
+    name: Check the source code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+      # unable to use yarn in actions/setup-node@v3 https://github.com/actions/setup-node/issues/182#issuecomment-966885975
+      - name: Install Yarn
+        run: npm install -g yarn
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+          cache: yarn
+      - name: Install packages
+        run: yarn
+      - name: Checkout Base Branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+          clean: false
+      - name: Checkout Target Branch
+        uses: actions/checkout@v3
+        with:
+          clean: false
+      - name: Lint
+        run: yarn lint
+      - name: Test
+        run: yarn test
+      - name: Check Target Contract Size
+        run: echo "\`\`\`\n $(yarn run hardhat size-contracts)" > ./comments
+      - name: Post comments
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr comment -F ./comments "${URL}"
