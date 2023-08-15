@@ -9,26 +9,31 @@ import "./interfaces/IAuctionDeposit.sol";
 contract AuctionDeposit is IAuctionDeposit {
     using SafeERC20 for IERC20;
 
-    IERC20 public token;
-    uint256 constant MAX_DEPOSIT = 2500 * 10 ** 18;
+    address public communityTokenAddr;
+    uint256 public maxDeposit = 2500 * 10 ** 18;
 
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
 
-    constructor(IERC20 _token) {
-        token = _token;
+    constructor(address _token) {
+        communityTokenAddr = _token;
     }
 
     function deposit(uint256 amount) external override {
-        uint256 balanceBefore = token.balanceOf(address(this));
-        uint256 balanceAfter = token.balanceOf(address(this));
+        require(amount > 0, "AuctionDeposit: Amount should be greater than 0");
         require(
-            balanceAfter - balanceBefore == amount,
-            "Transferred amount does not match requested amount"
+            _deposits[msg.sender] + amount <= maxDeposit,
+            "AuctionDeposit: Deposit limit exceeded"
         );
 
+        bool _success = IERC20(communityTokenAddr).transferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
+        require(_success, "AuctionDeposit: Community token transfer failed");
+
         _deposits[msg.sender] += amount;
-        require(_deposits[msg.sender] <= MAX_DEPOSIT, "Deposit limit exceeded");
 
         emit Deposit(msg.sender, amount);
     }
@@ -41,7 +46,7 @@ contract AuctionDeposit is IAuctionDeposit {
         );
 
         _deposits[msg.sender] -= amount;
-        token.safeTransfer(msg.sender, amount);
+        IERC20(communityTokenAddr).safeTransfer(msg.sender, amount);
 
         emit Withdraw(msg.sender, amount);
     }
@@ -70,7 +75,7 @@ contract AuctionDeposit is IAuctionDeposit {
 
     //仮で入れてるのであとから実装し直す必要あり
     function sendToTreasury(uint256 amount) external override {
-        token.safeTransfer(msg.sender, amount);
+        IERC20(communityTokenAddr).safeTransfer(msg.sender, amount);
         emit SendToTreasury(msg.sender, amount);
     }
 }

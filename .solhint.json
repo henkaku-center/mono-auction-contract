@@ -6,6 +6,7 @@
     "avoid-sha3": "warn",
     "no-global-import": "off",
     "contract-name-camelcase": "off",
-    "func-visibility": ["warn", { "ignoreConstructors": true }]
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "compiler-version": ["error", "^0.8.18"]
   }
 }
