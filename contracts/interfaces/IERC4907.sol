@@ -1,10 +1,8 @@
-pragma solidity 0.8.18;
-
 // SPDX-License-Identifier: MIT
 
-import "./IERC721Enumerable.sol";
+pragma solidity 0.8.18;
 
-interface IERC4907 is IERC721Enumerable {
+interface IERC4907 {
     // Logged when the user of an NFT is changed or expires is changed
     /// @notice Emitted when the `user` of an NFT or the `expires` of the `user` is changed
     /// The zero address for user indicates that there is no user address

@@ -6,11 +6,13 @@ import "./IERC4907.sol";
 
 interface IMonoNFT is IERC4907 {
     // The status of monoNFT
+    /// @param READY: オークション前, Before auction
     /// @param IN_AUCTION: オークション中, In auction
     /// @param CONFIRMED: 落札者確定, Auction ended
     /// @param CLAIMED: 支払完了 使用中, In use
     /// @param DEPRECATED: 廃止, Deprecated
     enum MonoNFTStatus {
+        READY,
         IN_AUCTION,
         CONFIRMED,
         CLAIMED,
@@ -36,9 +38,17 @@ interface IMonoNFT is IERC4907 {
         uint256 price
     );
 
+    // Emit when a monoNFT is registered.
+    event Register(uint256 indexed tokenId, monoNFT _monoNFT);
+
     // Emit when a nft successfly claimed by the winner of an auction.
     // オークション落札者がNFTを正常に引き取ったときに発行。
     event Claim(uint256 indexed tokenId, address indexed user, uint256 price);
+
+    // Admin register a monoNFT
+    /// @param _monoNFT: monoNFTの情報, The information of the monoNFT
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function register(monoNFT calldata _monoNFT) external;
 
     // Admin confirm the winner of an auction and set price, expires
     /// @param winner: オークション落札者, The winner of an auction
@@ -81,8 +91,4 @@ interface IMonoNFT is IERC4907 {
 
     // Get the monoNFTs
     function getNFTs() external view returns (monoNFT[] memory);
-
-    // Get the token metadata of an monoNFT
-    /// @param tokenId: NFTのトークンID, The token id of the nft
-    function tokenURI(uint256 tokenId) external view returns (string memory);
 }
