@@ -35,7 +35,7 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard  {
         require(_success, "AuctionDeposit: Community token transfer failed");
 
         _deposits[msg.sender] += amount;
-        
+
         emit Deposit(msg.sender, amount);
 }
 
