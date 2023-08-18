@@ -11,13 +11,17 @@ import { expect } from 'chai'
 
 describe('MonoNFT', () => {
   let admin: SignerWithAddress
+  let admin2: SignerWithAddress
   let user1: SignerWithAddress
   let tokenContract: MockERC20
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
 
+  const defaultAdminRole =
+    '0x0000000000000000000000000000000000000000000000000000000000000000'
+
   beforeEach(async () => {
-    ;[admin, user1] = await ethers.getSigners()
+    ;[admin, admin2, user1] = await ethers.getSigners()
 
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
@@ -38,6 +42,33 @@ describe('MonoNFT', () => {
       await auctionDepositContract.getAddress(),
     ])
     await monoNFTContract.waitForDeployment()
+  })
+
+  describe('AccessControl', () => {
+    it('should check initial admin', async () => {
+      expect(
+        await monoNFTContract.hasRole(defaultAdminRole, admin.address)
+      ).to.equal(true)
+    })
+
+    it('should revert setting a new admin by not admin', async () => {
+      await expect(
+        monoNFTContract
+          .connect(user1)
+          .grantRole(defaultAdminRole, admin2.address)
+      ).to.be.reverted
+    })
+
+    it('should set a new admin', async () => {
+      await expect(
+        monoNFTContract
+          .connect(admin)
+          .grantRole(defaultAdminRole, admin2.address)
+      ).to.emit(monoNFTContract, 'RoleGranted')
+      expect(
+        await monoNFTContract.hasRole(defaultAdminRole, admin2.address)
+      ).to.equal(true)
+    })
   })
 
   it('should register monoNFT', async () => {
