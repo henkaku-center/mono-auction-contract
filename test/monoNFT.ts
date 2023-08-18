@@ -61,7 +61,7 @@ describe('MonoNFT', () => {
 
     it('should set a new admin', async () => {
       await expect(
-        monoNFTContract
+        await monoNFTContract
           .connect(admin)
           .grantRole(defaultAdminRole, admin2.address)
       ).to.emit(monoNFTContract, 'RoleGranted')
