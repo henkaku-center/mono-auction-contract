@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 import "./erc4907/ERC4907.sol";
 import "./interfaces/IMonoNFT.sol";
@@ -25,6 +25,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function register(monoNFT calldata _monoNFT) external {
+        // TODO: Only admin can call this function
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(msg.sender, newTokenId);
@@ -37,11 +38,24 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         uint256 tokenId,
         uint256 price,
         uint64 expires
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {}
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // TODO: Check whether the winner has the auction member NFT
+        // TODO: CONFIRMEDに変更
+        // TODO: 落札情報を登録
+    }
 
-    function submit(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) {}
+    function submit(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        // TODO: Only admin can call this function
+        // これは IN_AUCTION のための関数かも?
+    }
 
-    function claim(uint256 tokenId) external {}
+    function claim(uint256 tokenId) external {
+        // TODO: Check whether the sender has the auction member NFT
+        // TODO: Check whether the sender is the winner
+        // TODD: Call the sendToTreasury function of the deposit contract（落札者情報を元に）
+        // TODO: CLAIMEDに変更
+        // TODO: call setUser（落札者情報を元に）
+    }
 
     function updateMonoNFTStatus(
         uint256 tokenId,
