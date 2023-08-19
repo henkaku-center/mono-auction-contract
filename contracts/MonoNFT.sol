@@ -5,8 +5,9 @@ pragma solidity 0.8.18;
 import "./erc4907/ERC4907.sol";
 import "./interfaces/IMonoNFT.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract MonoNFT is ERC4907, IMonoNFT {
+contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -20,6 +21,7 @@ contract MonoNFT is ERC4907, IMonoNFT {
         address _auctionDepositContractAddress
     ) ERC721(_name, _symbol) {
         auctionDepositContractAddress = _auctionDepositContractAddress;
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     function register(monoNFT calldata _monoNFT) external {
@@ -35,16 +37,16 @@ contract MonoNFT is ERC4907, IMonoNFT {
         uint256 tokenId,
         uint256 price,
         uint64 expires
-    ) external {}
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {}
 
-    function submit(uint256 tokenId) external {}
+    function submit(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     function claim(uint256 tokenId) external {}
 
     function updateMonoNFTStatus(
         uint256 tokenId,
         MonoNFTStatus status
-    ) external {}
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     function isExpired(uint256 tokenId) external view returns (bool) {
         return userExpires(tokenId) < block.timestamp;
@@ -60,7 +62,7 @@ contract MonoNFT is ERC4907, IMonoNFT {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC4907) returns (bool) {
+    ) public view virtual override(ERC4907, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
