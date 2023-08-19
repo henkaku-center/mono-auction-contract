@@ -16,14 +16,14 @@ describe('AuctionDeposit', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply,
+      initialSupply
     ])
     await tokenContract.waitForDeployment()
 
     const tokenAddress: string = await tokenContract.getAddress()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      tokenAddress,
+      tokenAddress
     ])
     await auctionDepositContract.waitForDeployment()
   })

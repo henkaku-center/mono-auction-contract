@@ -4,9 +4,10 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol"; //reentrancy攻撃対策
 import "./interfaces/IAuctionDeposit.sol";
 
-contract AuctionDeposit is IAuctionDeposit {
+contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard  {
     using SafeERC20 for IERC20;
 
     address public communityTokenAddr;
@@ -36,13 +37,13 @@ contract AuctionDeposit is IAuctionDeposit {
         _deposits[msg.sender] += amount;
 
         emit Deposit(msg.sender, amount);
-    }
+}
 
-    //仮で入れてるのであとから実装し直す必要あり
-    function withdraw(uint256 amount) external override {
+    // withdraw周り実装
+    function withdraw(uint256 amount) external override nonReentrant {
         require(
             _deposits[msg.sender] >= amount,
-            "Withdraw amount exceeds deposit"
+            "AuctionDeposit: Withdraw amount exceeds deposit"
         );
 
         _deposits[msg.sender] -= amount;
