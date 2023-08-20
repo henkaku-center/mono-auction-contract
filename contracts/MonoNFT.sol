@@ -61,6 +61,10 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
 
     function claim(uint256 tokenId) external {
         // TODO: Check whether the sender has the auction member NFT
+        require(
+            IERC721(membershipNFTAddress).ownerOf(tokenId) == msg.sender,
+            "MonoNFT: You don't have the auction member NFT"
+        );
         // TODO: Check whether the sender is the winner
         // TODD: Call the sendToTreasury function of the deposit contract（落札者情報を元に）
         // TODO: CLAIMEDに変更

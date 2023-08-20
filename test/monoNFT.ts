@@ -117,6 +117,18 @@ describe('MonoNFT', () => {
     })
   })
 
+  describe('Claim', () => {
+    it('should revert claim by not membership NFT owner', async () => {
+      await expect(monoNFTContract.connect(user2).claim(1)).to.be.revertedWith(
+        `MonoNFT: You don't have the auction member NFT`
+      )
+    })
+
+    it('should claim', async () => {
+      expect(await monoNFTContract.connect(user1).claim(1)).not.to.be.reverted
+    })
+  })
+
   it('should register monoNFT', async () => {
     const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
       donor: user1.address,
