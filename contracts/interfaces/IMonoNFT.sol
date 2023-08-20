@@ -45,6 +45,11 @@ interface IMonoNFT is IERC4907 {
     // オークション落札者がNFTを正常に引き取ったときに発行。
     event Claim(uint256 indexed tokenId, address indexed user, uint256 price);
 
+    // Set the address of the membershipNFT
+    /// @param _membershipNFTAddress: membershipNFTのアドレス, The address of the new membershipNFT
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function setMembershipNFTAddress(address _membershipNFTAddress) external;
+
     // Admin register a monoNFT
     /// @param _monoNFT: monoNFTの情報, The information of the monoNFT
     /// @dev 管理者のみがこの関数実行可能, Only admin can call this function

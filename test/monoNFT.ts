@@ -4,6 +4,7 @@ import {
   IMonoNFT,
   MockERC20,
   MonoNFT,
+  MockERC721,
 } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { parseEther } from 'ethers'
@@ -13,15 +14,17 @@ describe('MonoNFT', () => {
   let admin: SignerWithAddress
   let admin2: SignerWithAddress
   let user1: SignerWithAddress
+  let user2: SignerWithAddress
   let tokenContract: MockERC20
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
+  let membershipNFT: MockERC721
 
   const defaultAdminRole =
     '0x0000000000000000000000000000000000000000000000000000000000000000'
 
   beforeEach(async () => {
-    ;[admin, admin2, user1] = await ethers.getSigners()
+    ;[admin, admin2, user1, user2] = await ethers.getSigners()
 
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
@@ -36,12 +39,55 @@ describe('MonoNFT', () => {
     ])
     await auctionDepositContract.waitForDeployment()
 
+    membershipNFT = await ethers.deployContract('MockERC721', [
+      'membershipNFT',
+      'MSNFT',
+    ])
+    await membershipNFT.waitForDeployment()
+
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
       'mono',
       await auctionDepositContract.getAddress(),
+      await membershipNFT.getAddress(),
     ])
     await monoNFTContract.waitForDeployment()
+
+    await (await membershipNFT.mint(user1.address, 1)).wait()
+  })
+
+  describe('Membership NFT address', () => {
+    let shouldMembershipNFTAddress: (address: string) => Promise<void>
+
+    it('check membership NFT address', async () => {
+      shouldMembershipNFTAddress = async (address: string) => {
+        expect(await monoNFTContract.membershipNFTAddress()).to.equal(address)
+      }
+
+      shouldMembershipNFTAddress(await membershipNFT.getAddress())
+    })
+
+    it('should revert setting membership NFT address by not admin', async () => {
+      shouldMembershipNFTAddress(await membershipNFT.getAddress())
+
+      await expect(
+        monoNFTContract.connect(user1).setMembershipNFTAddress(user1.address)
+      ).to.be.reverted
+
+      shouldMembershipNFTAddress(await membershipNFT.getAddress())
+    })
+
+    it('should set membership NFT address', async () => {
+      shouldMembershipNFTAddress(await membershipNFT.getAddress())
+
+      await expect(
+        await monoNFTContract
+          .connect(admin)
+          .setMembershipNFTAddress(user1.address)
+      ).not.to.be.reverted
+
+      shouldMembershipNFTAddress(user1.address)
+    })
   })
 
   describe('AccessControl', () => {

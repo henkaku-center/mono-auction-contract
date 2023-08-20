@@ -13,15 +13,25 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
 
     address public auctionDepositContractAddress;
 
+    address public membershipNFTAddress;
+
     mapping(uint256 => monoNFT) public _monoNFTs;
 
     constructor(
         string memory _name,
         string memory _symbol,
-        address _auctionDepositContractAddress
+        address _auctionDepositContractAddress,
+        address _membershipNFTAddress
     ) ERC721(_name, _symbol) {
         auctionDepositContractAddress = _auctionDepositContractAddress;
+        membershipNFTAddress = _membershipNFTAddress;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function setMembershipNFTAddress(
+        address _membershipNFTAddress
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        membershipNFTAddress = _membershipNFTAddress;
     }
 
     function register(monoNFT calldata _monoNFT) external {
