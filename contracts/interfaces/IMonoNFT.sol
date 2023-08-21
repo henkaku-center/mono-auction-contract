@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
 
 import "./IERC4907.sol";
 
@@ -28,6 +28,16 @@ interface IMonoNFT is IERC4907 {
         uint64 expiresDuration;
         string uri;
         MonoNFTStatus status;
+    }
+
+    // The struct of Winner
+    /// @param winner: オークションの落札者, Winner of an auction
+    /// @param price: オークションの落札価格, The price of an auction
+    /// @param expires:expires: 利用権の有効期限, The expires of the user
+    struct Winner {
+        address winner;
+        uint256 price;
+        uint256 expires;
     }
 
     // Emit when a winner of an auction is confirmed.
@@ -66,7 +76,7 @@ interface IMonoNFT is IERC4907 {
         address winner,
         uint256 tokenId,
         uint256 price,
-        uint64 expires
+        uint256 expires
     ) external;
 
     // Submit a monoNFT for auction
