@@ -6,6 +6,7 @@ import "./erc4907/ERC4907.sol";
 import "./interfaces/IMonoNFT.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./interfaces/IAuctionDeposit.sol";
 
 contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     using Counters for Counters.Counter;
@@ -27,6 +28,14 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         auctionDepositContractAddress = _auctionDepositContractAddress;
         membershipNFTAddress = _membershipNFTAddress;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    modifier onlyMonoAuctionMember() {
+        require(
+            IERC721(membershipNFTAddress).balanceOf(msg.sender) >= 1,
+            "MonoNFT: You don't have the auction member NFT"
+        );
+        _;
     }
 
     function setMembershipNFTAddress(
@@ -64,7 +73,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         uint256 price
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // TODO: Check whether the winner has the auction member NFT
-        uint256 expires = block.number + _monoNFTs[tokenId].expiresDuration;
+        uint256 expires = block.timestamp + _monoNFTs[tokenId].expiresDuration;
         confirmWinner(winner, tokenId, price, expires);
     }
 
@@ -73,16 +82,20 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         // これは IN_AUCTION のための関数かも?
     }
 
-    function claim(uint256 tokenId) external {
-        // TODO: Check whether the sender has the auction member NFT
+    function claim(uint256 tokenId) external onlyMonoAuctionMember {
+        Winner memory winnerInfo = _latestWinners[tokenId];
         require(
-            IERC721(membershipNFTAddress).ownerOf(tokenId) == msg.sender,
-            "MonoNFT: You don't have the auction member NFT"
+            winnerInfo.winner == msg.sender,
+            "MonoNFT: You are not the winner"
         );
-        // TODO: Check whether the sender is the winner
+
         // TODD: Call the sendToTreasury function of the deposit contract（落札者情報を元に）
-        // TODO: CLAIMEDに変更
-        // TODO: call setUser（落札者情報を元に）
+
+        _monoNFTs[tokenId].status = MonoNFTStatus.CLAIMED;
+
+        setUser(tokenId, msg.sender, uint64(winnerInfo.expires));
+
+        emit Claim(tokenId, msg.sender, winnerInfo.price);
     }
 
     function updateMonoNFTStatus(

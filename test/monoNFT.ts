@@ -15,6 +15,7 @@ describe('MonoNFT', () => {
   let admin2: SignerWithAddress
   let user1: SignerWithAddress
   let user2: SignerWithAddress
+  let notUser: SignerWithAddress
   let tokenContract: MockERC20
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
@@ -24,7 +25,7 @@ describe('MonoNFT', () => {
     '0x0000000000000000000000000000000000000000000000000000000000000000'
 
   beforeEach(async () => {
-    ;[admin, admin2, user1, user2] = await ethers.getSigners()
+    ;[admin, admin2, user1, user2, notUser] = await ethers.getSigners()
 
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
@@ -53,7 +54,9 @@ describe('MonoNFT', () => {
     ])
     await monoNFTContract.waitForDeployment()
 
-    await (await membershipNFT.mint(user1.address, 1)).wait()
+    await (await membershipNFT.mint(user1.address)).wait()
+
+    await (await membershipNFT.mint(user2.address)).wait()
   })
 
   describe('Membership NFT address', () => {
@@ -117,18 +120,6 @@ describe('MonoNFT', () => {
     })
   })
 
-  describe('Claim', () => {
-    it('should revert claim by not membership NFT owner', async () => {
-      await expect(monoNFTContract.connect(user2).claim(1)).to.be.revertedWith(
-        `MonoNFT: You don't have the auction member NFT`
-      )
-    })
-
-    it('should claim', async () => {
-      expect(await monoNFTContract.connect(user1).claim(1)).not.to.be.reverted
-    })
-  })
-
   it('should register monoNFT', async () => {
     const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
       donor: user1.address,
@@ -156,7 +147,7 @@ describe('MonoNFT', () => {
   })
 
   describe('confirmWinner', () => {
-    let latestBlock
+    let confirmWinnerTimestamp
 
     beforeEach(async () => {
       const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
@@ -167,11 +158,11 @@ describe('MonoNFT', () => {
         status: 0,
       }
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
-      latestBlock = await ethers.provider.getBlock('latest')
+      await monoNFTContract.connect(admin).register(monoNFTMetadata)
     })
 
     it('should confirmWinner without duration', async () => {
-      expect(
+      await expect(
         await monoNFTContract
           .connect(admin)
           ['confirmWinner(address,uint256,uint256)'](
@@ -181,31 +172,107 @@ describe('MonoNFT', () => {
           )
       ).to.emit(monoNFTContract, 'ConfirmWinner')
 
+      confirmWinnerTimestamp = await ethers.provider.getBlock('latest')
+
       const _latestWinners = await monoNFTContract._latestWinners(1)
       expect(_latestWinners.winner).to.equal(user1.address)
       expect(_latestWinners.price).to.equal(parseEther('1000'))
       expect(_latestWinners.expires).to.equal(
-        latestBlock!.number + 1 + (1000 * 60 * 60 * 24 * 365) / 2
+        confirmWinnerTimestamp!.timestamp + (1000 * 60 * 60 * 24 * 365) / 2
       )
     })
 
     it('should confirmWinner with duration', async () => {
-      expect(
+      confirmWinnerTimestamp = await ethers.provider.getBlock('latest')
+
+      await expect(
         await monoNFTContract
           .connect(admin)
           ['confirmWinner(address,uint256,uint256,uint256)'](
-            user1.address,
-            1,
+            user2.address,
+            2,
             parseEther('500'),
-            latestBlock!.timestamp + 1000 * 60 * 60 * 24 * 365
+            confirmWinnerTimestamp!.timestamp + 1000 * 60 * 60 * 24 * 365
           )
       ).to.emit(monoNFTContract, 'ConfirmWinner')
 
-      const _latestWinners = await monoNFTContract._latestWinners(1)
-      expect(_latestWinners.winner).to.equal(user1.address)
+      const _latestWinners = await monoNFTContract._latestWinners(2)
+      expect(_latestWinners.winner).to.equal(user2.address)
       expect(_latestWinners.price).to.equal(parseEther('500'))
       expect(_latestWinners.expires).to.equal(
-        latestBlock!.timestamp + 1000 * 60 * 60 * 24 * 365
+        confirmWinnerTimestamp!.timestamp + 1000 * 60 * 60 * 24 * 365
+      )
+    })
+  })
+
+  describe('Claim', () => {
+    const currentTokenId: number = 1
+    let monoNFTMetadata: IMonoNFT.MonoNFTStruct
+    let confirmWinnerTimestamp
+    beforeEach(async () => {
+      monoNFTMetadata = {
+        donor: user1.address,
+        //半年
+        expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
+        uri: 'https://metadata.uri',
+        status: 0,
+      }
+      await monoNFTContract.connect(admin).register(monoNFTMetadata)
+
+      await monoNFTContract
+        .connect(admin)
+        ['confirmWinner(address,uint256,uint256)'](
+          user1.address,
+          currentTokenId,
+          parseEther('1000')
+        )
+
+      confirmWinnerTimestamp = await ethers.provider.getBlock('latest')
+    })
+
+    it('should revert claim by not membership NFT owner', async () => {
+      await expect(
+        monoNFTContract.connect(notUser).claim(currentTokenId)
+      ).to.be.revertedWith(`MonoNFT: You don't have the auction member NFT`)
+    })
+
+    it('should revert claim by not winner', async () => {
+      await expect(
+        monoNFTContract.connect(user2).claim(currentTokenId)
+      ).to.be.revertedWith(`MonoNFT: You are not the winner`)
+    })
+
+    it('should revert claim by not approved', async () => {
+      await expect(
+        monoNFTContract.connect(user1).claim(currentTokenId)
+      ).to.be.revertedWith('ERC4907: transfer caller is not owner nor approved')
+    })
+
+    it('should claim', async () => {
+      const shouldUserAndExpiresOf = async (
+        tokenId: number,
+        user: string,
+        expires: number
+      ): Promise<void> => {
+        expect(await monoNFTContract.userOf(tokenId)).to.equal(user)
+        expect(await monoNFTContract.userExpires(tokenId)).to.equal(expires)
+      }
+
+      // tokenId（引数１） の user（引数２） と expires（引数３） を確認
+      await shouldUserAndExpiresOf(currentTokenId, ethers.ZeroAddress, 0)
+
+      await expect(
+        await monoNFTContract.connect(admin).approve(user1, currentTokenId)
+      ).to.emit(monoNFTContract, 'Approval')
+
+      await expect(await monoNFTContract.connect(user1).claim(currentTokenId))
+        .to.emit(monoNFTContract, 'UpdateUser')
+        .to.emit(monoNFTContract, 'Claim')
+
+      await shouldUserAndExpiresOf(
+        currentTokenId,
+        user1.address,
+        confirmWinnerTimestamp!.timestamp + monoNFTMetadata.expiresDuration
       )
     })
   })
