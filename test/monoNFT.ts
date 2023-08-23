@@ -151,4 +151,39 @@ describe('MonoNFT', () => {
       )
     })
   })
+
+  describe("submit", function() {
+    let tokenId;
+
+    beforeEach(async () => {
+          const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
+      donor: user1.address,
+      //半年
+      expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
+      uri: 'https://metadata.uri',
+      status: 0
+    };
+      // ここで新しいNFTを登録
+      await monoNFTContract.register(monoNFTMetadata);
+      tokenId = (await monoNFTContract.totalSupply()).toNumber(); // 最新のtokenIdを取得
+    });
+
+    it("should update status to IN_AUCTION when tokenId exists and not in auction", async function() {
+      const tokenId = 1;  // もしこのtokenIdが既に登録されているものであることを確認
+      await monoNFTContract.register(monoNFTMetadata);  // 必要に応じてtokenIdを登録
+      await monoNFTContract.submit(tokenId);
+      const nft = await monoNFTContract._monoNFTs(tokenId);
+      assert.equal(nft.status, MonoNFTStatus.IN_AUCTION);  // MonoNFTStatusの定義が必要
+    });
+
+    it("should revert when tokenId does not exist", async function() {
+    const nonExistentTokenId = tokenId + 1;  // 存在しないtokenIdを設定
+    await expect(monoNFTContract.submit(nonExistentTokenId)).to.be.revertedWith("NFT does not exist");
+  });
+
+  it("should revert when token is already in auction", async function() {
+    await monoNFTContract.submit(tokenId);
+    await expect(monoNFTContract.submit(tokenId)).to.be.revertedWith("NFT is already in auction");
+  });
+  });
 })

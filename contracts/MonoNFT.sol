@@ -9,11 +9,12 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+
+    Counters.Counter private _tokenIds; // tokenIdのカウンターを管理
 
     address public auctionDepositContractAddress;
 
-    mapping(uint256 => monoNFT) public _monoNFTs;
+    mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
     mapping(uint256 => Winner) public _latestWinners;
 
     constructor(
@@ -26,7 +27,6 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function register(monoNFT calldata _monoNFT) external {
-        // TODO: Only admin can call this function
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(msg.sender, newTokenId);
