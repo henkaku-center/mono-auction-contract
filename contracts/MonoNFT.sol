@@ -14,6 +14,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     address public auctionDepositContractAddress;
 
     mapping(uint256 => monoNFT) public _monoNFTs;
+    mapping(uint256 => Winner) public _latestWinners;
 
     constructor(
         string memory _name,
@@ -37,11 +38,24 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         address winner,
         uint256 tokenId,
         uint256 price,
-        uint64 expires
+        uint256 expires
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        // TODO: Check whether the winner has the auction member NFT
+        _monoNFTs[tokenId].status = MonoNFTStatus.CONFIRMED;
+        _latestWinners[tokenId] = Winner(winner, price, expires);
+        emit ConfirmWinner(tokenId, winner, price);
+    }
+
+    // In principle, expires should be calculated using expiresDuration,
+    // but it can also be specified externally for flexibility.
+    function confirmWinner(
+        address winner,
+        uint256 tokenId,
+        uint256 price
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // TODO: Check whether the winner has the auction member NFT
-        // TODO: CONFIRMEDに変更
-        // TODO: 落札情報を登録
+        uint256 expires = block.number + _monoNFTs[tokenId].expiresDuration;
+        confirmWinner(winner, tokenId, price, expires);
     }
 
     function submit(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) {
