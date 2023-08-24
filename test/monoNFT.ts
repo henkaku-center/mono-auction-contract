@@ -21,8 +21,7 @@ describe('MonoNFT', () => {
   let monoNFTContract: MonoNFT
   let membershipNFT: MockERC721
 
-  const defaultAdminRole =
-    '0x0000000000000000000000000000000000000000000000000000000000000000'
+  const defaultAdminRole = ethers.ZeroHash
 
   beforeEach(async () => {
     ;[admin, admin2, user1, user2, notUser] = await ethers.getSigners()
