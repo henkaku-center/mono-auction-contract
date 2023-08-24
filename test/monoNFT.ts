@@ -3,7 +3,7 @@ import {
   AuctionDeposit,
   IMonoNFT,
   MockERC20,
-  MonoNFT,
+  MonoNFT
 } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { parseEther } from 'ethers'
@@ -27,19 +27,19 @@ describe('MonoNFT', () => {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply,
+      initialSupply
     ])
     await tokenContract.waitForDeployment()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await tokenContract.getAddress(),
+      await tokenContract.getAddress()
     ])
     await auctionDepositContract.waitForDeployment()
 
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
       'mono',
-      await auctionDepositContract.getAddress(),
+      await auctionDepositContract.getAddress()
     ])
     await monoNFTContract.waitForDeployment()
   })
@@ -77,7 +77,7 @@ describe('MonoNFT', () => {
       //半年
       expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
       uri: 'https://metadata.uri',
-      status: 0,
+      status: 0
     }
 
     expect(
@@ -106,7 +106,7 @@ describe('MonoNFT', () => {
           //半年
           expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
           uri: 'https://metadata.uri',
-          status: 0,
+          status: 0
         }
         await monoNFTContract.connect(admin).register(monoNFTMetadata)
       }
@@ -148,7 +148,7 @@ describe('MonoNFT', () => {
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
         uri: 'https://metadata.uri',
-        status: 0,
+        status: 0
       }
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
       latestBlock = await ethers.provider.getBlock('latest')
