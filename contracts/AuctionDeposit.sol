@@ -10,13 +10,15 @@ contract AuctionDeposit is IAuctionDeposit {
     using SafeERC20 for IERC20;
 
     address public communityTokenAddr;
+    address public monoNFTAddr;
     uint256 public maxDeposit = 2500 * 10 ** 18;
 
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
 
-    constructor(address _token) {
+    constructor(address _token, address _monoNFTAddr) {
         communityTokenAddr = _token;
+        monoNFTAddr = _monoNFTAddr;
     }
 
     function deposit(uint256 amount) external override {

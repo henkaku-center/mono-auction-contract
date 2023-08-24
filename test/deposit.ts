@@ -1,13 +1,20 @@
 import { ethers } from 'hardhat'
 import { expect, use } from 'chai'
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers'
-import { AuctionDeposit, MockERC20 } from '../typechain-types'
+import {
+  AuctionDeposit,
+  MockERC20,
+  MonoNFT,
+  MockERC721
+} from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
 describe('AuctionDeposit', function () {
   let user1: SignerWithAddress
   let tokenContract: MockERC20 // This should be a mock ERC20 token for testing
   let auctionDepositContract: AuctionDeposit
+  let monoNFTContract: MonoNFT
+  let membershipNFT: MockERC721
 
   beforeEach(async function () {
     ;[user1] = await ethers.getSigners()
@@ -16,14 +23,26 @@ describe('AuctionDeposit', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply,
+      initialSupply
     ])
     await tokenContract.waitForDeployment()
 
-    const tokenAddress: string = await tokenContract.getAddress()
+    membershipNFT = await ethers.deployContract('MockERC721', [
+      'membershipNFT',
+      'MSNFT'
+    ])
+    await membershipNFT.waitForDeployment()
+
+    monoNFTContract = await ethers.deployContract('MonoNFT', [
+      'monoNFT',
+      'mono',
+      await membershipNFT.getAddress()
+    ])
+    await monoNFTContract.waitForDeployment()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      tokenAddress,
+      await tokenContract.getAddress(),
+      await monoNFTContract.getAddress()
     ])
     await auctionDepositContract.waitForDeployment()
   })

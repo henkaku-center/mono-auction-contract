@@ -35,11 +35,6 @@ describe('MonoNFT', () => {
     ])
     await tokenContract.waitForDeployment()
 
-    auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await tokenContract.getAddress(),
-    ])
-    await auctionDepositContract.waitForDeployment()
-
     membershipNFT = await ethers.deployContract('MockERC721', [
       'membershipNFT',
       'MSNFT',
@@ -49,10 +44,21 @@ describe('MonoNFT', () => {
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
       'mono',
-      await auctionDepositContract.getAddress(),
       await membershipNFT.getAddress(),
     ])
     await monoNFTContract.waitForDeployment()
+
+    auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
+      await tokenContract.getAddress(),
+      await monoNFTContract.getAddress(),
+    ])
+    await auctionDepositContract.waitForDeployment()
+
+    await (
+      await monoNFTContract.setAuctionDepositAddress(
+        auctionDepositContract.getAddress()
+      )
+    ).wait()
 
     await (await membershipNFT.mint(user1.address)).wait()
 
@@ -249,6 +255,7 @@ describe('MonoNFT', () => {
     })
 
     it('should claim', async () => {
+      // tokenId（引数１） の user（引数２） と expires（引数３） を確認
       const shouldUserAndExpiresOf = async (
         tokenId: number,
         user: string,
@@ -258,7 +265,6 @@ describe('MonoNFT', () => {
         expect(await monoNFTContract.userExpires(tokenId)).to.equal(expires)
       }
 
-      // tokenId（引数１） の user（引数２） と expires（引数３） を確認
       await shouldUserAndExpiresOf(currentTokenId, ethers.ZeroAddress, 0)
 
       await expect(

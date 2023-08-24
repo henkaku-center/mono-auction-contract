@@ -60,6 +60,13 @@ interface IMonoNFT is IERC4907 {
     /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
     function setMembershipNFTAddress(address _membershipNFTAddress) external;
 
+    // Set the address of the auctionDepositContract
+    /// @param _auctionDepositContractAddress: auctionDepositContractのアドレス, The address of the new auctionDepositContract
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function setAuctionDepositAddress(
+        address _auctionDepositContractAddress
+    ) external;
+
     // Admin register a monoNFT
     /// @param _monoNFT: monoNFTの情報, The information of the monoNFT
     /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
