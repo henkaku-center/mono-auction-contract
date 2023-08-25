@@ -16,6 +16,7 @@ describe('MonoNFT', () => {
   let user1: SignerWithAddress
   let user2: SignerWithAddress
   let notUser: SignerWithAddress
+  let treasury: SignerWithAddress
   let tokenContract: MockERC20
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
@@ -24,7 +25,8 @@ describe('MonoNFT', () => {
   const defaultAdminRole = ethers.ZeroHash
 
   beforeEach(async () => {
-    ;[admin, admin2, user1, user2, notUser] = await ethers.getSigners()
+    ;[admin, admin2, user1, user2, notUser, treasury] =
+      await ethers.getSigners()
 
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
@@ -49,7 +51,8 @@ describe('MonoNFT', () => {
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
       await tokenContract.getAddress(),
-      await monoNFTContract.getAddress()
+      await monoNFTContract.getAddress(),
+      treasury.address
     ])
     await auctionDepositContract.waitForDeployment()
 

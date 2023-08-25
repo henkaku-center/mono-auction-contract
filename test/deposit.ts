@@ -12,13 +12,14 @@ import { formatEther, parseEther } from 'ethers'
 describe('AuctionDeposit', function () {
   let admin: SignerWithAddress
   let user1: SignerWithAddress
+  let treasury: SignerWithAddress
   let tokenContract: MockERC20 // This should be a mock ERC20 token for testing
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
   let membershipNFT: MockERC721
 
   beforeEach(async function () {
-    ;[admin, user1] = await ethers.getSigners()
+    ;[admin, user1, treasury] = await ethers.getSigners()
 
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
@@ -46,12 +47,19 @@ describe('AuctionDeposit', function () {
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
       await tokenContract.getAddress(),
-      await monoNFTContract.getAddress()
+      await monoNFTContract.getAddress(),
+      treasury.address
     ])
     await auctionDepositContract.waitForDeployment()
   })
 
   describe('Set treasury address', () => {
+    it('should check initial treasury address', async () => {
+      expect(await auctionDepositContract.treasuryAddr()).to.equal(
+        treasury.address
+      )
+    })
+
     it('should revert if not admin', async () => {
       await expect(
         auctionDepositContract.connect(user1).setTreasuryAddress(user1.address)

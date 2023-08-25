@@ -18,9 +18,10 @@ contract AuctionDeposit is IAuctionDeposit {
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
 
-    constructor(address _token, address _monoNFTAddr) {
+    constructor(address _token, address _monoNFTAddr, address _treasuryAddr) {
         communityTokenAddr = _token;
         monoNFTAddr = _monoNFTAddr;
+        treasuryAddr = _treasuryAddr;
     }
 
     function setTreasuryAddress(address _treasuryAddr) external {
