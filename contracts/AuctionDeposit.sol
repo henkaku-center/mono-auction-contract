@@ -53,7 +53,7 @@ contract AuctionDeposit is IAuctionDeposit {
 
     function payForClaim(address from, uint256 amount) external {
         require(
-            msg.sender == monoNFTAddr,
+            monoNFTAddr == msg.sender,
             "AuctionDeposit: Only MonoNFT can call payForClaim function"
         );
         require(
