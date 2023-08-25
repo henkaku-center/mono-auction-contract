@@ -26,6 +26,12 @@ interface IAuctionDeposit {
     // Deposit Community Token to the contract
     function deposit(uint256 amount) external;
 
+    // Move deposit balance from the claimer to the exhibitor(?)
+    /// @param from: The address of the winner
+    /// @param amount: The amount of Community Token to pay
+    /// @dev MonoNFTコントラクトからのみ呼び出し可能
+    function payForClaim(address from, uint256 amount) external;
+
     // Withdraw Community Token from the contract
     function withdraw(uint256 amount) external;
 

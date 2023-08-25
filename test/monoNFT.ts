@@ -36,6 +36,18 @@ describe('MonoNFT', () => {
     ])
     await tokenContract.waitForDeployment()
 
+    await (
+      await tokenContract
+        .connect(admin)
+        .transfer(user1.address, parseEther('1000'))
+    ).wait()
+
+    await (
+      await tokenContract
+        .connect(admin)
+        .transfer(user2.address, parseEther('1000'))
+    ).wait()
+
     membershipNFT = await ethers.deployContract('MockERC721', [
       'membershipNFT',
       'MSNFT'
@@ -217,6 +229,11 @@ describe('MonoNFT', () => {
     const currentTokenId: number = 1
     let monoNFTMetadata: IMonoNFT.MonoNFTStruct
     let confirmWinnerTimestamp
+    let getDepositAmountByAddress: (address: string) => Promise<bigint>
+    let approveAndDeposit: (
+      signer: SignerWithAddress,
+      amount: number
+    ) => Promise<void>
     beforeEach(async () => {
       monoNFTMetadata = {
         donor: user1.address,
@@ -250,13 +267,61 @@ describe('MonoNFT', () => {
       ).to.be.revertedWith(`MonoNFT: You are not the winner`)
     })
 
+    it('should revert claim due to insufficient deposit in AuctionDeposit contract', async () => {
+      await expect(
+        monoNFTContract.connect(user1).claim(currentTokenId)
+      ).to.be.revertedWith('AuctionDeposit: Deposit amount is not enough')
+    })
+
+    it('should deposit by user1 to AuctionDeposit contract', async () => {
+      getDepositAmountByAddress = async (address: string): Promise<bigint> => {
+        return (await auctionDepositContract.getDepositByAddress(address))
+          .amount
+      }
+
+      const initialDepositAmountOfUser1 = await getDepositAmountByAddress(
+        user1.address
+      )
+
+      approveAndDeposit = async (signer: SignerWithAddress, amount: number) => {
+        await tokenContract
+          .connect(signer)
+          .approve(auctionDepositContract.getAddress(), parseEther(`${amount}`))
+        await expect(
+          await auctionDepositContract
+            .connect(signer)
+            .deposit(parseEther(`${amount}`))
+        ).to.emit(auctionDepositContract, 'Deposit')
+      }
+      await approveAndDeposit(user1, 1000)
+
+      const addedDepositAmountOfUser1 = await getDepositAmountByAddress(
+        user1.address
+      )
+
+      expect(addedDepositAmountOfUser1).to.equal(
+        initialDepositAmountOfUser1 + parseEther('1000')
+      )
+    })
+
     it('should revert claim by not approved', async () => {
+      await approveAndDeposit(user1, 1000)
+
       await expect(
         monoNFTContract.connect(user1).claim(currentTokenId)
       ).to.be.revertedWith('ERC4907: transfer caller is not owner nor approved')
     })
 
     it('should claim', async () => {
+      await approveAndDeposit(user1, 1000)
+
+      const initialDepositAmountOfUser1 = await getDepositAmountByAddress(
+        user1.address
+      )
+      const initialDepositAmountOfTreasury = await getDepositAmountByAddress(
+        treasury.address
+      )
+
       // tokenId（引数１） の user（引数２） と expires（引数３） を確認
       const shouldUserAndExpiresOf = async (
         tokenId: number,
@@ -276,6 +341,13 @@ describe('MonoNFT', () => {
       await expect(await monoNFTContract.connect(user1).claim(currentTokenId))
         .to.emit(monoNFTContract, 'UpdateUser')
         .to.emit(monoNFTContract, 'Claim')
+
+      expect(await getDepositAmountByAddress(user1.address)).to.equal(
+        initialDepositAmountOfUser1 - parseEther('1000')
+      )
+      expect(await getDepositAmountByAddress(treasury.address)).to.equal(
+        initialDepositAmountOfTreasury + parseEther('1000')
+      )
 
       await shouldUserAndExpiresOf(
         currentTokenId,

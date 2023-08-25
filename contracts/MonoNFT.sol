@@ -93,9 +93,12 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
             "MonoNFT: You are not the winner"
         );
 
-        // TODD: Call the sendToTreasury function of the deposit contract（落札者情報を元に）
-
         _monoNFTs[tokenId].status = MonoNFTStatus.CLAIMED;
+
+        IAuctionDeposit(auctionDepositContractAddress).payForClaim(
+            msg.sender,
+            winnerInfo.price
+        );
 
         setUser(tokenId, msg.sender, uint64(winnerInfo.expires));
 

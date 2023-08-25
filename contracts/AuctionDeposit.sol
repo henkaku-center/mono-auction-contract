@@ -51,6 +51,19 @@ contract AuctionDeposit is IAuctionDeposit {
         emit Deposit(msg.sender, amount);
     }
 
+    function payForClaim(address from, uint256 amount) external {
+        require(
+            msg.sender == monoNFTAddr,
+            "AuctionDeposit: Only MonoNFT can call payForClaim function"
+        );
+        require(
+            _deposits[from] >= amount,
+            "AuctionDeposit: Deposit amount is not enough"
+        );
+        _deposits[from] -= amount;
+        _deposits[treasuryAddr] += amount;
+    }
+
     //仮で入れてるのであとから実装し直す必要あり
     function withdraw(uint256 amount) external override {
         require(
