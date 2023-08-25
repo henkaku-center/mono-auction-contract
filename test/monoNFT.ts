@@ -114,6 +114,15 @@ describe('MonoNFT', () => {
       await registerMonoNFT()
 
       const monoNFTs = await monoNFTContract.getNFTs()
+
+      expect(monoNFTs.length).to.equal(1)
+      expect(monoNFTs[0].status).to.equal(0)
+      expect(monoNFTs[0].donor).to.equal(user1.address)
+      expect(monoNFTs[0].expiresDuration).to.equal(
+        (1000 * 60 * 60 * 24 * 365) / 2
+      )
+      expect(monoNFTs[0].uri).to.equal('https://metadata.uri')
+      expect(monoNFTs[0].status).to.equal(0)
     })
 
     it('should revert updateMonoNFTStatus by not admin', async () => {
