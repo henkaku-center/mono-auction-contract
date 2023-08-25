@@ -20,6 +20,9 @@ interface IAuctionDeposit {
     // Emit when Community Token send to treasury
     event SendToTreasury(address indexed user, uint256 amount);
 
+    // Set the new treasury address
+    function setTreasuryAddress(address _treasuryAddr) external;
+
     // Deposit Community Token to the contract
     function deposit(uint256 amount) external;
 

@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./interfaces/IMonoNFT.sol";
 import "./interfaces/IAuctionDeposit.sol";
 
 contract AuctionDeposit is IAuctionDeposit {
@@ -11,6 +12,7 @@ contract AuctionDeposit is IAuctionDeposit {
 
     address public communityTokenAddr;
     address public monoNFTAddr;
+    address public treasuryAddr;
     uint256 public maxDeposit = 2500 * 10 ** 18;
 
     // This mapping tracks the deposit info of each user
@@ -19,6 +21,14 @@ contract AuctionDeposit is IAuctionDeposit {
     constructor(address _token, address _monoNFTAddr) {
         communityTokenAddr = _token;
         monoNFTAddr = _monoNFTAddr;
+    }
+
+    function setTreasuryAddress(address _treasuryAddr) external {
+        require(
+            IMonoNFT(monoNFTAddr).hasRole(bytes32(0), msg.sender),
+            "AuctionDeposit: Only admins of MonoNFT can call setTreasuryAddress function"
+        );
+        treasuryAddr = _treasuryAddr;
     }
 
     function deposit(uint256 amount) external override {

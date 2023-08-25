@@ -10,6 +10,7 @@ import {
 import { formatEther, parseEther } from 'ethers'
 
 describe('AuctionDeposit', function () {
+  let admin: SignerWithAddress
   let user1: SignerWithAddress
   let tokenContract: MockERC20 // This should be a mock ERC20 token for testing
   let auctionDepositContract: AuctionDeposit
@@ -17,7 +18,7 @@ describe('AuctionDeposit', function () {
   let membershipNFT: MockERC721
 
   beforeEach(async function () {
-    ;[user1] = await ethers.getSigners()
+    ;[admin, user1] = await ethers.getSigners()
 
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
@@ -26,6 +27,9 @@ describe('AuctionDeposit', function () {
       initialSupply
     ])
     await tokenContract.waitForDeployment()
+    await tokenContract
+      .connect(admin)
+      .transfer(user1.address, parseEther('1000000'))
 
     membershipNFT = await ethers.deployContract('MockERC721', [
       'membershipNFT',
@@ -47,16 +51,39 @@ describe('AuctionDeposit', function () {
     await auctionDepositContract.waitForDeployment()
   })
 
+  describe('Set treasury address', () => {
+    it('should revert if not admin', async () => {
+      await expect(
+        auctionDepositContract.connect(user1).setTreasuryAddress(user1.address)
+      ).to.be.revertedWith(
+        'AuctionDeposit: Only admins of MonoNFT can call setTreasuryAddress function'
+      )
+    })
+
+    it('should allow admin to set treasury address', async () => {
+      await expect(
+        await auctionDepositContract
+          .connect(admin)
+          .setTreasuryAddress(user1.address)
+      ).not.to.be.reverted
+
+      expect(await auctionDepositContract.treasuryAddr()).to.equal(
+        user1.address
+      )
+    })
+  })
+
   it('should allow users to deposit tokens', async function () {
     const initialBalance = await tokenContract.balanceOf(user1.address)
 
     // user1が持っているトークンをAuctionDepositに払い込むためにtokenコントラクトのapprove関数で承認する
-    await tokenContract.approve(
-      await auctionDepositContract.getAddress(),
-      parseEther('2500')
-    )
+    await tokenContract
+      .connect(user1)
+      .approve(await auctionDepositContract.getAddress(), parseEther('2500'))
     // auctionDepositコントラクトのdeposit関数を呼び出す
-    const runDeposit = await auctionDepositContract.deposit(parseEther('2500'))
+    const runDeposit = await auctionDepositContract
+      .connect(user1)
+      .deposit(parseEther('2500'))
     await runDeposit.wait()
 
     const finalBalance = await tokenContract.balanceOf(user1.address)
@@ -79,7 +106,7 @@ describe('AuctionDeposit', function () {
 
   it('should not allow users to deposit more than the maximum', async function () {
     await expect(
-      auctionDepositContract.deposit(parseEther('3000'))
+      auctionDepositContract.connect(user1).deposit(parseEther('3000'))
     ).to.be.revertedWith('AuctionDeposit: Deposit limit exceeded')
   })
 })
