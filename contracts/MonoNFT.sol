@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 
 import "./erc4907/ERC4907.sol";
 import "./interfaces/IMonoNFT.sol";
+import "./interfaces/IAuctionDeposit.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
@@ -14,16 +15,36 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
 
     address public auctionDepositContractAddress;
 
+    address public membershipNFTAddress;
+
     mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
     mapping(uint256 => Winner) public _latestWinners;
 
     constructor(
         string memory _name,
-        string memory _symbol,
-        address _auctionDepositContractAddress
+        string memory _symbol
     ) ERC721(_name, _symbol) {
-        auctionDepositContractAddress = _auctionDepositContractAddress;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    modifier onlyMonoAuctionMember() {
+        require(
+            IERC721(membershipNFTAddress).balanceOf(msg.sender) >= 1,
+            "MonoNFT: You don't have the auction member NFT"
+        );
+        _;
+    }
+
+    function setMembershipNFTAddress(
+        address _membershipNFTAddress
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        membershipNFTAddress = _membershipNFTAddress;
+    }
+
+    function setAuctionDepositAddress(
+        address _auctionDepositContractAddress
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        auctionDepositContractAddress = _auctionDepositContractAddress;
     }
 
     function register(monoNFT calldata _monoNFT) external {
@@ -54,7 +75,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         uint256 price
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // TODO: Check whether the winner has the auction member NFT
-        uint256 expires = block.number + _monoNFTs[tokenId].expiresDuration;
+        uint256 expires = block.timestamp + _monoNFTs[tokenId].expiresDuration;
         confirmWinner(winner, tokenId, price, expires);
     }
 
@@ -75,12 +96,23 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         _monoNFTs[tokenId].status = MonoNFTStatus.IN_AUCTION;
     }
 
-    function claim(uint256 tokenId) external {
-        // TODO: Check whether the sender has the auction member NFT
-        // TODO: Check whether the sender is the winner
-        // TODD: Call the sendToTreasury function of the deposit contract（落札者情報を元に）
-        // TODO: CLAIMEDに変更
-        // TODO: call setUser（落札者情報を元に）
+    function claim(uint256 tokenId) external onlyMonoAuctionMember {
+        Winner memory winnerInfo = _latestWinners[tokenId];
+        require(
+            winnerInfo.winner == msg.sender,
+            "MonoNFT: You are not the winner"
+        );
+
+        _monoNFTs[tokenId].status = MonoNFTStatus.CLAIMED;
+
+        IAuctionDeposit(auctionDepositContractAddress).payForClaim(
+            msg.sender,
+            winnerInfo.price
+        );
+
+        setUser(tokenId, msg.sender, uint64(winnerInfo.expires));
+
+        emit Claim(tokenId, msg.sender, winnerInfo.price);
     }
 
     function updateMonoNFTStatus(
