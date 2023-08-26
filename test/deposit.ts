@@ -5,7 +5,7 @@ import {
   AuctionDeposit,
   MockERC20,
   MonoNFT,
-  MockERC721
+  MockERC721,
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -21,36 +21,58 @@ describe('AuctionDeposit', function () {
   beforeEach(async function () {
     ;[admin, user1, treasury] = await ethers.getSigners()
 
+    // コミュニティトークンのデプロイと初期配布
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
+      initialSupply,
     ])
     await tokenContract.waitForDeployment()
     await tokenContract
       .connect(admin)
       .transfer(user1.address, parseEther('1000000'))
 
+    // membershipNFTのデプロイ
     membershipNFT = await ethers.deployContract('MockERC721', [
       'membershipNFT',
-      'MSNFT'
+      'MSNFT',
     ])
     await membershipNFT.waitForDeployment()
 
+    // monoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
       'mono',
-      await membershipNFT.getAddress()
     ])
     await monoNFTContract.waitForDeployment()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await tokenContract.getAddress(),
       await monoNFTContract.getAddress(),
-      treasury.address
     ])
     await auctionDepositContract.waitForDeployment()
+
+    // MonoNFTの初期設定
+    await (
+      await monoNFTContract.setMembershipNFTAddress(
+        await membershipNFT.getAddress()
+      )
+    ).wait()
+    await (
+      await monoNFTContract.setAuctionDepositAddress(
+        await auctionDepositContract.getAddress()
+      )
+    ).wait()
+
+    // AuctionDepositの初期設定
+    await (
+      await auctionDepositContract.setCommunityTokenAddress(
+        await tokenContract.getAddress()
+      )
+    ).wait()
+    await (
+      await auctionDepositContract.setTreasuryAddress(treasury.address)
+    ).wait()
   })
 
   describe('Set treasury address', () => {
@@ -63,9 +85,7 @@ describe('AuctionDeposit', function () {
     it('should revert if not admin', async () => {
       await expect(
         auctionDepositContract.connect(user1).setTreasuryAddress(user1.address)
-      ).to.be.revertedWith(
-        'AuctionDeposit: Only admins of MonoNFT can call setTreasuryAddress function'
-      )
+      ).to.be.revertedWith('AuctionDeposit: Only admins of MonoNFT can call')
     })
 
     it('should allow admin to set treasury address', async () => {

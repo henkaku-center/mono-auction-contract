@@ -4,27 +4,26 @@ pragma solidity ^0.8.18;
 
 import "./erc4907/ERC4907.sol";
 import "./interfaces/IMonoNFT.sol";
+import "./interfaces/IAuctionDeposit.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./interfaces/IAuctionDeposit.sol";
 
 contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+
+    Counters.Counter private _tokenIds; // tokenIdのカウンターを管理
 
     address public auctionDepositContractAddress;
 
     address public membershipNFTAddress;
 
-    mapping(uint256 => monoNFT) public _monoNFTs;
+    mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
     mapping(uint256 => Winner) public _latestWinners;
 
     constructor(
         string memory _name,
-        string memory _symbol,
-        address _membershipNFTAddress
+        string memory _symbol
     ) ERC721(_name, _symbol) {
-        membershipNFTAddress = _membershipNFTAddress;
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
@@ -49,7 +48,6 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function register(monoNFT calldata _monoNFT) external {
-        // TODO: Only admin can call this function
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
         _mint(msg.sender, newTokenId);
@@ -82,8 +80,20 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function submit(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // TODO: Only admin can call this function
-        // これは IN_AUCTION のための関数かも?
+        // 指定されたtokenIdのNFTが存在することを確認
+        require(
+            keccak256(bytes(_monoNFTs[tokenId].uri)) != keccak256(bytes("")),
+            "MonoNFT: NFT does not exist"
+        );
+
+        // NFTがオークションに出品されていない、またはオークションが終了していることを確認
+        require(
+            _monoNFTs[tokenId].status != MonoNFTStatus.IN_AUCTION,
+            "MonoNFT: NFT is already in auction"
+        );
+
+        // 3. NFTのステータスをIN_AUCTIONに変更します。
+        _monoNFTs[tokenId].status = MonoNFTStatus.IN_AUCTION;
     }
 
     function claim(uint256 tokenId) external onlyMonoAuctionMember {

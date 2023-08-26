@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IMonoNFT.sol";
 import "./interfaces/IAuctionDeposit.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract AuctionDeposit is IAuctionDeposit {
     using SafeERC20 for IERC20;
@@ -18,17 +18,33 @@ contract AuctionDeposit is IAuctionDeposit {
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
 
-    constructor(address _token, address _monoNFTAddr, address _treasuryAddr) {
-        communityTokenAddr = _token;
+    constructor(address _monoNFTAddr) {
         monoNFTAddr = _monoNFTAddr;
-        treasuryAddr = _treasuryAddr;
     }
 
-    function setTreasuryAddress(address _treasuryAddr) external {
+    modifier onlyMonoAuctionAdmin() {
         require(
             IMonoNFT(monoNFTAddr).hasRole(bytes32(0), msg.sender),
-            "AuctionDeposit: Only admins of MonoNFT can call setTreasuryAddress function"
+            "AuctionDeposit: Only admins of MonoNFT can call"
         );
+        _;
+    }
+
+    function setCommunityTokenAddress(
+        address _communityTokenAddr
+    ) external onlyMonoAuctionAdmin {
+        communityTokenAddr = _communityTokenAddr;
+    }
+
+    function setMonoNFTAddress(
+        address _monoNFTAddr
+    ) external onlyMonoAuctionAdmin {
+        monoNFTAddr = _monoNFTAddr;
+    }
+
+    function setTreasuryAddress(
+        address _treasuryAddr
+    ) external onlyMonoAuctionAdmin {
         treasuryAddr = _treasuryAddr;
     }
 

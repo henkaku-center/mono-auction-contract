@@ -4,11 +4,13 @@ import {
   IMonoNFT,
   MockERC20,
   MonoNFT,
-  MockERC721
+  MockERC721,
 } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { parseEther } from 'ethers'
 import { expect } from 'chai'
+import { assert } from 'chai'
+import { BigNumberish } from 'ethers'
 
 describe('MonoNFT', () => {
   let admin: SignerWithAddress
@@ -28,11 +30,12 @@ describe('MonoNFT', () => {
     ;[admin, admin2, user1, user2, notUser, treasury] =
       await ethers.getSigners()
 
+    // コミュニティトークンのデプロイと初期配布
     const initialSupply = parseEther('1000000')
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
+      initialSupply,
     ])
     await tokenContract.waitForDeployment()
 
@@ -48,35 +51,49 @@ describe('MonoNFT', () => {
         .transfer(user2.address, parseEther('1000'))
     ).wait()
 
+    // メンバーシップNFTのデプロイと初期配布
     membershipNFT = await ethers.deployContract('MockERC721', [
       'membershipNFT',
-      'MSNFT'
+      'MSNFT',
     ])
     await membershipNFT.waitForDeployment()
+    await (await membershipNFT.mint(user1.address)).wait()
+    await (await membershipNFT.mint(user2.address)).wait()
 
+    // MonoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
       'mono',
-      await membershipNFT.getAddress()
     ])
     await monoNFTContract.waitForDeployment()
 
+    // AuctionDepositのデプロイ
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await tokenContract.getAddress(),
       await monoNFTContract.getAddress(),
-      treasury.address
     ])
     await auctionDepositContract.waitForDeployment()
 
+    // MonoNFTの初期設定
+    await (
+      await monoNFTContract.setMembershipNFTAddress(
+        await membershipNFT.getAddress()
+      )
+    ).wait()
     await (
       await monoNFTContract.setAuctionDepositAddress(
-        auctionDepositContract.getAddress()
+        await auctionDepositContract.getAddress()
       )
     ).wait()
 
-    await (await membershipNFT.mint(user1.address)).wait()
-
-    await (await membershipNFT.mint(user2.address)).wait()
+    // AuctionDepositの初期設定
+    await (
+      await auctionDepositContract.setCommunityTokenAddress(
+        await tokenContract.getAddress()
+      )
+    ).wait()
+    await (
+      await auctionDepositContract.setTreasuryAddress(treasury.address)
+    ).wait()
   })
 
   describe('Membership NFT address', () => {
@@ -146,7 +163,7 @@ describe('MonoNFT', () => {
       //半年
       expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
       uri: 'https://metadata.uri',
-      status: 0
+      status: 0,
     }
 
     expect(
@@ -175,7 +192,7 @@ describe('MonoNFT', () => {
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
         uri: 'https://metadata.uri',
-        status: 0
+        status: 0,
       }
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
@@ -240,7 +257,7 @@ describe('MonoNFT', () => {
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
         uri: 'https://metadata.uri',
-        status: 0
+        status: 0,
       }
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
 
@@ -353,6 +370,43 @@ describe('MonoNFT', () => {
         currentTokenId,
         user1.address,
         confirmWinnerTimestamp!.timestamp + monoNFTMetadata.expiresDuration
+      )
+    })
+  })
+
+  describe('submit', function () {
+    let tokenId: BigNumberish
+
+    beforeEach(async () => {
+      const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
+        donor: user1.address,
+        //半年
+        expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
+        uri: 'https://metadata.uri',
+        status: 0,
+      }
+      // ここで新しいNFTを登録
+      await monoNFTContract.register(monoNFTMetadata)
+      tokenId = await monoNFTContract.totalSupply() // 最新のtokenIdを取得
+    })
+
+    it('should update status to IN_AUCTION when tokenId exists and not in auction', async function () {
+      await monoNFTContract.connect(admin).submit(tokenId)
+      const nft = await monoNFTContract._monoNFTs(tokenId)
+      const IN_AUCTION = 1 // MonoNFTStatus.IN_AUCTION に相当する数値
+      assert.equal(Number(nft.status), IN_AUCTION)
+    })
+
+    it('should revert when tokenId does not exist', async function () {
+      await expect(
+        monoNFTContract.connect(admin).submit(999)
+      ).to.be.revertedWith('MonoNFT: NFT does not exist')
+    })
+
+    it('should revert when token is already in auction', async function () {
+      await monoNFTContract.submit(tokenId)
+      await expect(monoNFTContract.submit(tokenId)).to.be.revertedWith(
+        'MonoNFT: NFT is already in auction'
       )
     })
   })
