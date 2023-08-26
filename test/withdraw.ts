@@ -4,36 +4,82 @@ import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers'
 import {
   AuctionDeposit,
   MockERC20,
-  MaliciousAttacker
+  MaliciousAttacker,
+  MonoNFT,
+  MockERC721,
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
 describe('AuctionWithdraw', function () {
+  let admin: SignerWithAddress
   let user1: SignerWithAddress
   let tokenContract: MockERC20
   let auctionDepositContract: AuctionDeposit
   let attackerContract: MaliciousAttacker
+  let treasury: SignerWithAddress
+  let monoNFTContract: MonoNFT
+  let membershipNFT: MockERC721
 
   beforeEach(async function () {
-    ;[user1] = await ethers.getSigners()
+    ;[admin, user1, treasury] = await ethers.getSigners()
 
+    // コミュニティトークンのデプロイと初期配布
     const initialSupply = parseEther('1000000')
-
-    const MockERC20Factory = await ethers.getContractFactory('MockERC20')
-    tokenContract = await MockERC20Factory.deploy(
+    tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
-    )
-    await tokenContract.waitForDeployment() // 確実にデプロイが完了していることを待ちます
+      initialSupply,
+    ])
+    await tokenContract.waitForDeployment()
 
-    const tokenAddress: string = tokenContract.getAddress() // ← ここで明示的にアドレスを取得します。
+    await (
+      await tokenContract
+        .connect(admin)
+        .transfer(user1.address, parseEther('1000000'))
+    ).wait()
 
-    const AuctionDepositFactory = await ethers.getContractFactory(
-      'AuctionDeposit'
-    )
-    auctionDepositContract = await AuctionDepositFactory.deploy(tokenAddress)
-    await auctionDepositContract.waitForDeployment() // 確実にデプロイが完了していることを待ちます
+    // メンバーシップNFTのデプロイと初期配布
+    membershipNFT = await ethers.deployContract('MockERC721', [
+      'membershipNFT',
+      'MSNFT',
+    ])
+    await membershipNFT.waitForDeployment()
+    await (await membershipNFT.mint(user1.address)).wait()
+
+    // MonoNFTのデプロイ
+    monoNFTContract = await ethers.deployContract('MonoNFT', [
+      'monoNFT',
+      'mono',
+    ])
+    await monoNFTContract.waitForDeployment()
+
+    // AuctionDepositのデプロイ
+    auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
+      await monoNFTContract.getAddress(),
+    ])
+    await auctionDepositContract.waitForDeployment()
+
+    // MonoNFTの初期設定
+    await (
+      await monoNFTContract.setMembershipNFTAddress(
+        await membershipNFT.getAddress()
+      )
+    ).wait()
+    await (
+      await monoNFTContract.setAuctionDepositAddress(
+        await auctionDepositContract.getAddress()
+      )
+    ).wait()
+
+    // AuctionDepositの初期設定
+    await (
+      await auctionDepositContract.setCommunityTokenAddress(
+        await tokenContract.getAddress()
+      )
+    ).wait()
+    await (
+      await auctionDepositContract.setTreasuryAddress(treasury.address)
+    ).wait()
 
     const MaliciousAttackerFactory = await ethers.getContractFactory(
       'MaliciousAttacker'

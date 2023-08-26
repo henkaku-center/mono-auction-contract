@@ -1,16 +1,20 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.18;
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 
 import "./IERC4907.sol";
 
-interface IMonoNFT is IERC4907 {
+interface IMonoNFT is IERC4907, IAccessControl {
     // The status of monoNFT
+    /// @param READY: オークション前, Before auction
     /// @param IN_AUCTION: オークション中, In auction
     /// @param CONFIRMED: 落札者確定, Auction ended
     /// @param CLAIMED: 支払完了 使用中, In use
     /// @param DEPRECATED: 廃止, Deprecated
     enum MonoNFTStatus {
+        READY,
         IN_AUCTION,
         CONFIRMED,
         CLAIMED,
@@ -28,6 +32,16 @@ interface IMonoNFT is IERC4907 {
         MonoNFTStatus status;
     }
 
+    // The struct of Winner
+    /// @param winner: オークションの落札者, Winner of an auction
+    /// @param price: オークションの落札価格, The price of an auction
+    /// @param expires:expires: 利用権の有効期限, The expires of the user
+    struct Winner {
+        address winner;
+        uint256 price;
+        uint256 expires;
+    }
+
     // Emit when a winner of an auction is confirmed.
     // オークション落札者が確定したときに発行。
     event ConfirmWinner(
@@ -36,9 +50,29 @@ interface IMonoNFT is IERC4907 {
         uint256 price
     );
 
+    // Emit when a monoNFT is registered.
+    event Register(uint256 indexed tokenId, monoNFT _monoNFT);
+
     // Emit when a nft successfly claimed by the winner of an auction.
     // オークション落札者がNFTを正常に引き取ったときに発行。
     event Claim(uint256 indexed tokenId, address indexed user, uint256 price);
+
+    // Set the address of the membershipNFT
+    /// @param _membershipNFTAddress: membershipNFTのアドレス, The address of the new membershipNFT
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function setMembershipNFTAddress(address _membershipNFTAddress) external;
+
+    // Set the address of the auctionDepositContract
+    /// @param _auctionDepositContractAddress: auctionDepositContractのアドレス, The address of the new auctionDepositContract
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function setAuctionDepositAddress(
+        address _auctionDepositContractAddress
+    ) external;
+
+    // Admin register a monoNFT
+    /// @param _monoNFT: monoNFTの情報, The information of the monoNFT
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function register(monoNFT calldata _monoNFT) external;
 
     // Admin confirm the winner of an auction and set price, expires
     /// @param winner: オークション落札者, The winner of an auction
@@ -51,7 +85,7 @@ interface IMonoNFT is IERC4907 {
         address winner,
         uint256 tokenId,
         uint256 price,
-        uint64 expires
+        uint256 expires
     ) external;
 
     // Submit a monoNFT for auction
@@ -81,8 +115,4 @@ interface IMonoNFT is IERC4907 {
 
     // Get the monoNFTs
     function getNFTs() external view returns (monoNFT[] memory);
-
-    // Get the token metadata of an monoNFT
-    /// @param tokenId: NFTのトークンID, The token id of the nft
-    function tokenURI(uint256 tokenId) external view returns (string memory);
 }
