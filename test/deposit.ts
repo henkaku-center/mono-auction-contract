@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat'
-import { expect, use } from 'chai'
+import { expect } from 'chai'
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers'
 import {
   AuctionDeposit,

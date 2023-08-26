@@ -6,8 +6,9 @@ import "./interfaces/IMonoNFT.sol";
 import "./interfaces/IAuctionDeposit.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol"; //reentrancy攻撃対策
 
-contract AuctionDeposit is IAuctionDeposit {
+contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     address public communityTokenAddr;
@@ -84,7 +85,7 @@ contract AuctionDeposit is IAuctionDeposit {
     function withdraw(uint256 amount) external override {
         require(
             _deposits[msg.sender] >= amount,
-            "Withdraw amount exceeds deposit"
+            "AuctionDeposit: Withdraw amount exceeds deposit"
         );
 
         _deposits[msg.sender] -= amount;
