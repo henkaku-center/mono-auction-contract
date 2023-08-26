@@ -59,9 +59,15 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function submit(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // TODO: Only admin can call this function
-        // これは IN_AUCTION のための関数かも?
-    }
+    // 指定されたtokenIdのNFTが存在することを確認
+    require(keccak256(bytes(_monoNFTs[tokenId].uri)) != keccak256(bytes("")), "NFT does not exist");
+
+    // NFTがオークションに出品されていない、またはオークションが終了していることを確認
+    require(_monoNFTs[tokenId].status != MonoNFTStatus.IN_AUCTION, "NFT is already in auction");
+
+    // 3. NFTのステータスをIN_AUCTIONに変更します。
+    _monoNFTs[tokenId].status = MonoNFTStatus.IN_AUCTION;
+}
 
     function claim(uint256 tokenId) external {
         // TODO: Check whether the sender has the auction member NFT

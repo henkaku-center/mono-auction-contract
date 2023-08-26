@@ -8,6 +8,9 @@ import {
 import { ethers } from 'hardhat'
 import { parseEther } from 'ethers'
 import { expect } from 'chai'
+import { assert } from 'chai';
+import { BigNumberish } from "ethers";
+
 
 describe('MonoNFT', () => {
   let admin: SignerWithAddress
@@ -153,7 +156,7 @@ describe('MonoNFT', () => {
   })
 
   describe("submit", function() {
-    let tokenId;
+    let tokenId: BigNumberish;
 
     beforeEach(async () => {
           const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
@@ -165,21 +168,23 @@ describe('MonoNFT', () => {
     };
       // ここで新しいNFTを登録
       await monoNFTContract.register(monoNFTMetadata);
-      tokenId = (await monoNFTContract.totalSupply()).toNumber(); // 最新のtokenIdを取得
+      tokenId = (await monoNFTContract.totalSupply()); // 最新のtokenIdを取得
+      console.log("Token ID:", tokenId.toString());
     });
 
+    
     it("should update status to IN_AUCTION when tokenId exists and not in auction", async function() {
-      const tokenId = 1;  // もしこのtokenIdが既に登録されているものであることを確認
-      await monoNFTContract.register(monoNFTMetadata);  // 必要に応じてtokenIdを登録
-      await monoNFTContract.submit(tokenId);
-      const nft = await monoNFTContract._monoNFTs(tokenId);
-      assert.equal(nft.status, MonoNFTStatus.IN_AUCTION);  // MonoNFTStatusの定義が必要
-    });
+    await monoNFTContract.connect(admin).submit(tokenId);
+    const nft = await monoNFTContract._monoNFTs(tokenId);
+    const IN_AUCTION = 1; // MonoNFTStatus.IN_AUCTION に相当する数値
+    assert.equal(Number(nft.status), IN_AUCTION);
+});
 
     it("should revert when tokenId does not exist", async function() {
-    const nonExistentTokenId = tokenId + 1;  // 存在しないtokenIdを設定
-    await expect(monoNFTContract.submit(nonExistentTokenId)).to.be.revertedWith("NFT does not exist");
-  });
+    const { ethers } = require("hardhat");
+    const nonExistentTokenId = ethers.BigNumber.from(tokenId).add(1);  // 存在しないtokenIdを設定
+    await expect(monoNFTContract.connect(user1).submit(nonExistentTokenId)).to.be.revertedWith("NFT does not exist");
+});
 
   it("should revert when token is already in auction", async function() {
     await monoNFTContract.submit(tokenId);
