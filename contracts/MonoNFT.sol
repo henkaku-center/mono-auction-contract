@@ -118,7 +118,9 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     function updateMonoNFTStatus(
         uint256 tokenId,
         MonoNFTStatus status
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {}
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _monoNFTs[tokenId].status = status;
+    }
 
     function isExpired(uint256 tokenId) external view returns (bool) {
         return userExpires(tokenId) < block.timestamp;
