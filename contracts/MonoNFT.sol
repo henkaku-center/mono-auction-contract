@@ -16,6 +16,10 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     address public auctionDepositContractAddress;
 
     address public membershipNFTAddress;
+    
+    // 追記
+    address public treasuryWalletAddress;
+    // 追記ここまで
 
     mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
     mapping(uint256 => Winner) public _latestWinners;
@@ -145,4 +149,24 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     ) public view override(ERC721) returns (string memory) {
         return _monoNFTs[tokenId].uri;
     }
+
+    // 追記
+    function setTreasuryWalletAddress(address _treasuryWalletAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    treasuryWalletAddress = _treasuryWalletAddress;
+    }
+
+    function ownerOf(uint256 tokenId) public view override(ERC721, IERC721) returns (address) {
+    // オークションの落札者情報を取得
+    Winner memory winnerInfo = _latestWinners[tokenId];
+    
+    // 使用期限内の場合、落札者のアドレスを返す
+    if (winnerInfo.expires >= block.timestamp && winnerInfo.winner != address(0)) {
+        return winnerInfo.winner;
+    }
+    
+    // 使用期限を過ぎている場合、またはオークション開始前、オークションに出品されていない状態の場合は、henkakuのtresuary walletのアドレスを返す
+    return treasuryWalletAddress;
+    }
+    // 追記ここまで
+
 }
