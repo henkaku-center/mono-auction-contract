@@ -2,9 +2,11 @@
 
 pragma solidity ^0.8.18;
 
+import "@openzeppelin/contracts/access/IAccessControl.sol";
+
 import "./IERC4907.sol";
 
-interface IMonoNFT is IERC4907 {
+interface IMonoNFT is IERC4907, IAccessControl {
     // The status of monoNFT
     /// @param READY: オークション前, Before auction
     /// @param IN_AUCTION: オークション中, In auction
@@ -54,6 +56,18 @@ interface IMonoNFT is IERC4907 {
     // Emit when a nft successfly claimed by the winner of an auction.
     // オークション落札者がNFTを正常に引き取ったときに発行。
     event Claim(uint256 indexed tokenId, address indexed user, uint256 price);
+
+    // Set the address of the membershipNFT
+    /// @param _membershipNFTAddress: membershipNFTのアドレス, The address of the new membershipNFT
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function setMembershipNFTAddress(address _membershipNFTAddress) external;
+
+    // Set the address of the auctionDepositContract
+    /// @param _auctionDepositContractAddress: auctionDepositContractのアドレス, The address of the new auctionDepositContract
+    /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
+    function setAuctionDepositAddress(
+        address _auctionDepositContractAddress
+    ) external;
 
     // Admin register a monoNFT
     /// @param _monoNFT: monoNFTの情報, The information of the monoNFT
