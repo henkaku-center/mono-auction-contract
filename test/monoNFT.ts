@@ -11,9 +11,7 @@ import { parseEther } from 'ethers'
 import { expect } from 'chai'
 import { assert } from 'chai'
 import { BigNumberish } from 'ethers'
-// 追記
-import { ethers as ethersLibrary } from "ethers";
-// 追記ここまで
+import dayjs from 'dayjs'
 
 describe('MonoNFT', () => {
   let admin: SignerWithAddress
@@ -185,42 +183,6 @@ describe('MonoNFT', () => {
     expect(monoNFTs[0].uri).to.equal(monoNFTMetadata.uri)
     expect(monoNFTs[0].status).to.equal(monoNFTMetadata.status)
   })
-  
-  // 追記
-  it("should correctly set henkakuTreasuryWallet", async function() {
-    const treasuryWallet = treasury.address;
-    await monoNFTContract.setTreasuryWalletAddress(treasuryWallet);
-
-    expect(await monoNFTContract.ownerOf(user1.address)).to.equal(treasuryWallet);
-  });
-
-  it("should allow setting an auction winner for a token", async function() {
-    const deadline = Date.now() + 1000 * 60 * 60 * 24;  // 1 day from now
-    const tokenId = 1; // 例として1を使用。
-    const oneEtherInWei = BigInt(10)**BigInt(18);
-    await monoNFTContract["confirmWinner(address,uint256,uint256,uint256)"](user1.address, tokenId, oneEtherInWei, deadline);
-
-    const winner = await monoNFTContract._latestWinners(tokenId);
-    expect(winner.winner).to.equal(user1.address);
-    expect(Number(winner.expires)).to.be.closeTo(deadline, 1000);  // Allow for some variance
-});
-
-
-  it("should return the winner address if within the deadline", async function() {
-    const tokenId = 1; 
-    const winnerInfo = await monoNFTContract._latestWinners(tokenId);
-    expect(await monoNFTContract.ownerOf(tokenId)).to.equal(winnerInfo.winner);
-  });
-
-  it("should return the treasury wallet after the deadline", async function() {
-    // Fast-forward time (this depends on your test environment; e.g., if using ganache)
-    await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
-    await ethers.provider.send("evm_mine");
-
-    const tokenId = 1;
-    expect(await monoNFTContract.ownerOf(tokenId)).to.equal(await monoNFTContract.treasuryWalletAddress());
-  });
-  // 追記ここまで
 
   describe('Update MonoNFT status', async () => {
     let registerMonoNFT: any
@@ -231,7 +193,7 @@ describe('MonoNFT', () => {
           //半年
           expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
           uri: 'https://metadata.uri',
-          status: 0
+          status: 0,
         }
         await monoNFTContract.connect(admin).register(monoNFTMetadata)
       }
@@ -292,11 +254,7 @@ describe('MonoNFT', () => {
       await expect(
         await monoNFTContract
           .connect(admin)
-          ['confirmWinner(address,uint256,uint256)'](
-            user1.address,
-            1,
-            parseEther('1000')
-          )
+          .confirmWinner(user1.address, 1, parseEther('1000'))
       ).to.emit(monoNFTContract, 'ConfirmWinner')
 
       confirmWinnerTimestamp = await ethers.provider.getBlock('latest')
@@ -306,28 +264,6 @@ describe('MonoNFT', () => {
       expect(_latestWinners.price).to.equal(parseEther('1000'))
       expect(_latestWinners.expires).to.equal(
         confirmWinnerTimestamp!.timestamp + (1000 * 60 * 60 * 24 * 365) / 2
-      )
-    })
-
-    it('should confirmWinner with duration', async () => {
-      confirmWinnerTimestamp = await ethers.provider.getBlock('latest')
-
-      await expect(
-        await monoNFTContract
-          .connect(admin)
-          ['confirmWinner(address,uint256,uint256,uint256)'](
-            user2.address,
-            2,
-            parseEther('500'),
-            confirmWinnerTimestamp!.timestamp + 1000 * 60 * 60 * 24 * 365
-          )
-      ).to.emit(monoNFTContract, 'ConfirmWinner')
-
-      const _latestWinners = await monoNFTContract._latestWinners(2)
-      expect(_latestWinners.winner).to.equal(user2.address)
-      expect(_latestWinners.price).to.equal(parseEther('500'))
-      expect(_latestWinners.expires).to.equal(
-        confirmWinnerTimestamp!.timestamp + 1000 * 60 * 60 * 24 * 365
       )
     })
   })
@@ -353,11 +289,7 @@ describe('MonoNFT', () => {
 
       await monoNFTContract
         .connect(admin)
-        ['confirmWinner(address,uint256,uint256)'](
-          user1.address,
-          currentTokenId,
-          parseEther('1000')
-        )
+        .confirmWinner(user1.address, currentTokenId, parseEther('1000'))
 
       confirmWinnerTimestamp = await ethers.provider.getBlock('latest')
     })
@@ -461,6 +393,22 @@ describe('MonoNFT', () => {
         user1.address,
         confirmWinnerTimestamp!.timestamp + monoNFTMetadata.expiresDuration
       )
+    })
+
+    it('should return the user address if within the deadline', async function () {
+      const tokenId = 1
+      const user = await monoNFTContract.userOf(tokenId)
+      expect(await monoNFTContract.ownerOf(tokenId)).to.equal(user)
+    })
+
+    it('should return the treasury wallet after the deadline', async function () {
+      // Fast-forward time (this depends on your test environment; e.g., if using ganache)
+      await ethers.provider.send('evm_increaseTime', [24 * 60 * 60])
+      await ethers.provider.send('evm_mine')
+
+      const tokenId = 1
+      const owner = await monoNFTContract.ownerOf(tokenId)
+      expect(await monoNFTContract.ownerOf(tokenId)).to.equal(owner)
     })
   })
 

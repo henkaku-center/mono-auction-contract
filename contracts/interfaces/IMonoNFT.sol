@@ -78,14 +78,12 @@ interface IMonoNFT is IERC4907, IAccessControl {
     /// @param winner: オークション落札者, The winner of an auction
     /// @param tokenId: NFTのトークンID, The token id of the nft
     /// @param price: オークションの落札価格, The price of an auction
-    /// @param expires: 利用権の有効期限、寄贈者が設定した期間をつかって算出, The expires of the user, calculated using the expiresDuration of the monoNFT
     /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
     /// @dev winnerがオークションメンバーNFTを持っているかのチェック, Check whether the winner has the auction member NFT
     function confirmWinner(
         address winner,
         uint256 tokenId,
-        uint256 price,
-        uint256 expires
+        uint256 price
     ) external;
 
     // Submit a monoNFT for auction
