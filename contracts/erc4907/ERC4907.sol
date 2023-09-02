@@ -48,9 +48,7 @@ abstract contract ERC4907 is IERC4907, ERC721Enumerable {
     /// @dev The zero value indicates that there is no user
     /// @param tokenId The NFT to get the user expires for
     /// @return The user expires for this NFT
-    function userExpires(
-        uint256 tokenId
-    ) public view virtual returns (uint256) {
+    function userExpires(uint256 tokenId) public view virtual returns (uint64) {
         return _users[tokenId].expires;
     }
 
