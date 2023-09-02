@@ -2,17 +2,12 @@
 
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
-contract MockERC721 is ERC721 {
+contract MockERC1155 is ERC1155("") {
     uint256 public tokenIds;
 
-    constructor(
-        string memory name,
-        string memory symbol
-    ) ERC721(name, symbol) {}
-
-    function mint(address to) external {
-        _mint(to, ++tokenIds);
+    function mint(address to, uint256 id) external {
+        _mint(to, id, 1, "");
     }
 }

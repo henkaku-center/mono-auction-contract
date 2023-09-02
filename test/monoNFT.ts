@@ -4,7 +4,7 @@ import {
   IMonoNFT,
   MockERC20,
   MonoNFT,
-  MockERC721,
+  MockERC1155
 } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { parseEther } from 'ethers'
@@ -22,7 +22,7 @@ describe('MonoNFT', () => {
   let tokenContract: MockERC20
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
-  let membershipNFT: MockERC721
+  let membershipNFT: MockERC1155
 
   const defaultAdminRole = ethers.ZeroHash
 
@@ -35,7 +35,7 @@ describe('MonoNFT', () => {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply,
+      initialSupply
     ])
     await tokenContract.waitForDeployment()
 
@@ -52,24 +52,21 @@ describe('MonoNFT', () => {
     ).wait()
 
     // メンバーシップNFTのデプロイと初期配布
-    membershipNFT = await ethers.deployContract('MockERC721', [
-      'membershipNFT',
-      'MSNFT',
-    ])
+    membershipNFT = await ethers.deployContract('MockERC1155', [])
     await membershipNFT.waitForDeployment()
-    await (await membershipNFT.mint(user1.address)).wait()
-    await (await membershipNFT.mint(user2.address)).wait()
+    await (await membershipNFT.mint(user1.address, 1)).wait()
+    await (await membershipNFT.mint(user2.address, 1)).wait()
 
     // MonoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
-      'mono',
+      'mono'
     ])
     await monoNFTContract.waitForDeployment()
 
     // AuctionDepositのデプロイ
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress(),
+      await monoNFTContract.getAddress()
     ])
     await auctionDepositContract.waitForDeployment()
 
@@ -163,7 +160,7 @@ describe('MonoNFT', () => {
       //半年
       expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
       uri: 'https://metadata.uri',
-      status: 0,
+      status: 0
     }
 
     expect(
@@ -243,7 +240,7 @@ describe('MonoNFT', () => {
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
         uri: 'https://metadata.uri',
-        status: 0,
+        status: 0
       }
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
@@ -308,7 +305,7 @@ describe('MonoNFT', () => {
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
         uri: 'https://metadata.uri',
-        status: 0,
+        status: 0
       }
       await monoNFTContract.connect(admin).register(monoNFTMetadata)
 
@@ -434,7 +431,7 @@ describe('MonoNFT', () => {
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
         uri: 'https://metadata.uri',
-        status: 0,
+        status: 0
       }
       // ここで新しいNFTを登録
       await monoNFTContract.register(monoNFTMetadata)
