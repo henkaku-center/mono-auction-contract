@@ -29,5 +29,5 @@ interface IERC4907 {
     /// @dev The zero value indicates that there is no user
     /// @param tokenId The NFT to get the user expires for
     /// @return The user expires for this NFT
-    function userExpires(uint256 tokenId) external view returns (uint256);
+    function userExpires(uint256 tokenId) external view returns (uint64);
 }

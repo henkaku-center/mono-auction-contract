@@ -14,7 +14,6 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     Counters.Counter private _tokenIds; // tokenIdのカウンターを管理
 
     address public auctionDepositContractAddress;
-
     address public membershipNFTAddress;
 
     mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
@@ -58,41 +57,25 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     function confirmWinner(
         address winner,
         uint256 tokenId,
-        uint256 price,
-        uint256 expires
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256 price
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // TODO: Check whether the winner has the auction member NFT
         _monoNFTs[tokenId].status = MonoNFTStatus.CONFIRMED;
+        uint256 expires = block.timestamp + _monoNFTs[tokenId].expiresDuration;
         _latestWinners[tokenId] = Winner(winner, price, expires);
         emit ConfirmWinner(tokenId, winner, price);
     }
 
-    // In principle, expires should be calculated using expiresDuration,
-    // but it can also be specified externally for flexibility.
-    function confirmWinner(
-        address winner,
-        uint256 tokenId,
-        uint256 price
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // TODO: Check whether the winner has the auction member NFT
-        uint256 expires = block.timestamp + _monoNFTs[tokenId].expiresDuration;
-        confirmWinner(winner, tokenId, price, expires);
-    }
-
     function submit(uint256 tokenId) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        // 指定されたtokenIdのNFTが存在することを確認
         require(
             keccak256(bytes(_monoNFTs[tokenId].uri)) != keccak256(bytes("")),
             "MonoNFT: NFT does not exist"
         );
-
-        // NFTがオークションに出品されていない、またはオークションが終了していることを確認
         require(
             _monoNFTs[tokenId].status != MonoNFTStatus.IN_AUCTION,
             "MonoNFT: NFT is already in auction"
         );
 
-        // 3. NFTのステータスをIN_AUCTIONに変更します。
         _monoNFTs[tokenId].status = MonoNFTStatus.IN_AUCTION;
     }
 
@@ -144,5 +127,17 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         uint256 tokenId
     ) public view override(ERC721) returns (string memory) {
         return _monoNFTs[tokenId].uri;
+    }
+
+    // @dev 使用期限内の場合、落札者のアドレスを返す. Return address of user if it is within the expiration date
+    function ownerOf(
+        uint256 tokenId
+    ) public view override(ERC721, IERC721) returns (address) {
+        address user = userOf(tokenId);
+        uint64 expires = userExpires(tokenId);
+        if (expires >= block.timestamp && user != address(0)) {
+            return user;
+        }
+        super;
     }
 }
