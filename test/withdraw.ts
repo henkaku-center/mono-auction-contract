@@ -70,6 +70,7 @@ describe('AuctionWithdraw', function () {
         await auctionDepositContract.getAddress()
       )
     ).wait()
+    await (await monoNFTContract.setAuctionAdminAddress(admin.address)).wait()
 
     // AuctionDepositの初期設定
     await (

@@ -21,6 +21,14 @@ interface IMonoNFT is IERC4907, IAccessControl {
         DEPRECATED
     }
 
+    // The type of monoNFT
+    /// @param RIGHT_OF_OWN: 所有権, Right of own
+    /// @param RIGHT_OF_USE: 利用権, Right of use
+    enum MonoNFTRightType {
+        RIGHT_OF_OWN,
+        RIGHT_OF_USE
+    }
+
     // The struct of monoNFT
     /// @param donor: monoの寄贈者, Donor of the mono
     /// @param expiresDuration: monoNFTのデフォルトの利用権保有期間, Default expires duration of the monoNFT
@@ -30,6 +38,15 @@ interface IMonoNFT is IERC4907, IAccessControl {
         uint64 expiresDuration;
         string uri;
         MonoNFTStatus status;
+        ShareOfCommunityToken[] sharesOfCommunityToken;
+    }
+
+    // The struct of ShareOfCommunityToken
+    /// @param shareHolder: 分配先アドレス, The address of the share holder
+    /// @param shareRatio: 分配割合(%), The amount of the share (%)
+    struct ShareOfCommunityToken {
+        address shareHolder;
+        uint8 shareRatio;
     }
 
     // The struct of Winner
@@ -39,7 +56,7 @@ interface IMonoNFT is IERC4907, IAccessControl {
     struct Winner {
         address winner;
         uint256 price;
-        uint256 expires;
+        uint64 expires;
     }
 
     // Emit when a winner of an auction is confirmed.
@@ -72,7 +89,7 @@ interface IMonoNFT is IERC4907, IAccessControl {
     // Admin register a monoNFT
     /// @param _monoNFT: monoNFTの情報, The information of the monoNFT
     /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
-    function register(monoNFT calldata _monoNFT) external;
+    function register(monoNFT calldata _monoNFT, address owner) external;
 
     // Admin confirm the winner of an auction and set price, expires
     /// @param winner: オークション落札者, The winner of an auction

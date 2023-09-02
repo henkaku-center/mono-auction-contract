@@ -6,7 +6,7 @@ import "./interfaces/IMonoNFT.sol";
 import "./interfaces/IAuctionDeposit.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol"; //reentrancy攻撃対策
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -75,7 +75,11 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         emit Deposit(msg.sender, amount);
     }
 
-    function payForClaim(address from, uint256 amount) external {
+    function payForClaim(
+        address from,
+        uint256 amount,
+        IMonoNFT.ShareOfCommunityToken[] calldata sharesOfCommunityToken
+    ) external {
         require(
             monoNFTAddr == msg.sender,
             "AuctionDeposit: Only MonoNFT can call payForClaim function"
@@ -86,13 +90,18 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         );
         _deposits[from] -= amount;
 
-        uint256 amountOfAuctionAdmin = amount / 10;
-        uint256 amountOfTreasury = amount - amountOfAuctionAdmin;
+        uint256 amountOfCommission = amount / 10;
         IERC20(communityTokenAddr).safeTransfer(
             auctionAdminAddr,
-            amountOfAuctionAdmin
+            amountOfCommission
         );
-        IERC20(communityTokenAddr).safeTransfer(treasuryAddr, amountOfTreasury);
+        uint256 amountOfShare = amount - amountOfCommission;
+        for (uint256 i = 0; i < sharesOfCommunityToken.length; i++) {
+            IERC20(communityTokenAddr).safeTransfer(
+                sharesOfCommunityToken[i].shareHolder,
+                (amountOfShare / 100) * sharesOfCommunityToken[i].shareRatio
+            );
+        }
     }
 
     //仮で入れてるのであとから実装し直す必要あり
