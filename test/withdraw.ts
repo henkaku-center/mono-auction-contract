@@ -80,6 +80,9 @@ describe('AuctionWithdraw', function () {
     await (
       await auctionDepositContract.setTreasuryAddress(treasury.address)
     ).wait()
+    await (
+      await auctionDepositContract.setAuctionAdminAddress(admin.address)
+    ).wait()
 
     const MaliciousAttackerFactory = await ethers.getContractFactory(
       'MaliciousAttacker'

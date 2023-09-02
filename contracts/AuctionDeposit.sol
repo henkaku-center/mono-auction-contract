@@ -14,6 +14,7 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
     address public communityTokenAddr;
     address public monoNFTAddr;
     address public treasuryAddr;
+    address public auctionAdminAddr;
     uint256 public maxDeposit = 2500 * 10 ** 18;
 
     // This mapping tracks the deposit info of each user
@@ -49,6 +50,12 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         treasuryAddr = _treasuryAddr;
     }
 
+    function setAuctionAdminAddress(
+        address _auctionAdminAddr
+    ) external onlyMonoAuctionAdmin {
+        auctionAdminAddr = _auctionAdminAddr;
+    }
+
     function deposit(uint256 amount) external override {
         require(amount > 0, "AuctionDeposit: Amount should be greater than 0");
         require(
@@ -78,7 +85,14 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
             "AuctionDeposit: Deposit amount is not enough"
         );
         _deposits[from] -= amount;
-        _deposits[treasuryAddr] += amount;
+
+        uint256 amountOfAuctionAdmin = amount / 10;
+        uint256 amountOfTreasury = amount - amountOfAuctionAdmin;
+        IERC20(communityTokenAddr).safeTransfer(
+            auctionAdminAddr,
+            amountOfAuctionAdmin
+        );
+        IERC20(communityTokenAddr).safeTransfer(treasuryAddr, amountOfTreasury);
     }
 
     //仮で入れてるのであとから実装し直す必要あり

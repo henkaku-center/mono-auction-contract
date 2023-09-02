@@ -14,6 +14,10 @@ module.exports = {
     hardhat: {
       chainId: 1337,
     },
+    local: {
+      url: 'http://localhost:8545',
+      accouts: [process.env.LOCAL_PRIVATE_KEY!],
+    },
   },
   mocha: {
     timeout: 20000,

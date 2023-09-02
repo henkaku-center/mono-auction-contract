@@ -95,6 +95,9 @@ describe('MonoNFT', () => {
     await (
       await auctionDepositContract.setTreasuryAddress(treasury.address)
     ).wait()
+    await (
+      await auctionDepositContract.setAuctionAdminAddress(admin.address)
+    ).wait()
   })
 
   describe('Membership NFT address', () => {
@@ -357,9 +360,6 @@ describe('MonoNFT', () => {
       const initialDepositAmountOfUser1 = await getDepositAmountByAddress(
         user1.address
       )
-      const initialDepositAmountOfTreasury = await getDepositAmountByAddress(
-        treasury.address
-      )
 
       // tokenId（引数１） の user（引数２） と expires（引数３） を確認
       const shouldUserAndExpiresOf = async (
@@ -383,9 +383,6 @@ describe('MonoNFT', () => {
 
       expect(await getDepositAmountByAddress(user1.address)).to.equal(
         initialDepositAmountOfUser1 - parseEther('1000')
-      )
-      expect(await getDepositAmountByAddress(treasury.address)).to.equal(
-        initialDepositAmountOfTreasury + parseEther('1000')
       )
 
       await shouldUserAndExpiresOf(
