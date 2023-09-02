@@ -14,13 +14,15 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
     address public communityTokenAddr;
     address public monoNFTAddr;
     address public treasuryAddr;
+    address public auctionAdminAddr;
     uint256 public maxDeposit = 2500 * 10 ** 18;
 
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
 
-    constructor(address _monoNFTAddr) {
+    constructor(address _monoNFTAddr, address _auctionAdminAddr) {
         monoNFTAddr = _monoNFTAddr;
+        auctionAdminAddr = _auctionAdminAddr;
     }
 
     modifier onlyMonoAuctionAdmin() {
@@ -78,7 +80,14 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
             "AuctionDeposit: Deposit amount is not enough"
         );
         _deposits[from] -= amount;
-        _deposits[treasuryAddr] += amount;
+
+        uint256 amountOfAuctionAdmin = amount / 10;
+        uint256 amountOfTreasury = amount - amountOfAuctionAdmin;
+        IERC20(communityTokenAddr).safeTransfer(
+            auctionAdminAddr,
+            amountOfAuctionAdmin
+        );
+        IERC20(communityTokenAddr).safeTransfer(treasuryAddr, amountOfTreasury);
     }
 
     //仮で入れてるのであとから実装し直す必要あり

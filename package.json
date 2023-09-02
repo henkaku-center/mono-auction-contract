@@ -5,7 +5,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "lint:sol": "yarn solhint --fix --max-warnings 5 \"contracts/**/*.sol\"",
-    "lint": "yarn lint:sol"
+    "lint": "yarn lint:sol",
+    "deploy:local": "hardhat run scripts/deploy_local.ts --network local"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.2",
