@@ -73,6 +73,9 @@ describe('AuctionDeposit', function () {
     await (
       await auctionDepositContract.setTreasuryAddress(treasury.address)
     ).wait()
+    await (
+      await auctionDepositContract.setAuctionAdminAddress(admin.address)
+    ).wait()
   })
 
   describe('Set treasury address', () => {

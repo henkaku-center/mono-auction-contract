@@ -20,9 +20,8 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
 
-    constructor(address _monoNFTAddr, address _auctionAdminAddr) {
+    constructor(address _monoNFTAddr) {
         monoNFTAddr = _monoNFTAddr;
-        auctionAdminAddr = _auctionAdminAddr;
     }
 
     modifier onlyMonoAuctionAdmin() {
@@ -49,6 +48,12 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         address _treasuryAddr
     ) external onlyMonoAuctionAdmin {
         treasuryAddr = _treasuryAddr;
+    }
+
+    function setAuctionAdminAddress(
+        address _auctionAdminAddr
+    ) external onlyMonoAuctionAdmin {
+        auctionAdminAddr = _auctionAdminAddr;
     }
 
     function deposit(uint256 amount) external override {
