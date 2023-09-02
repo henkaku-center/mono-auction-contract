@@ -5,7 +5,7 @@ import {
   AuctionDeposit,
   MockERC20,
   MonoNFT,
-  MockERC721,
+  MockERC1155
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -16,7 +16,7 @@ describe('AuctionDeposit', function () {
   let tokenContract: MockERC20 // This should be a mock ERC20 token for testing
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
-  let membershipNFT: MockERC721
+  let membershipNFT: MockERC1155
 
   beforeEach(async function () {
     ;[admin, user1, treasury] = await ethers.getSigners()
@@ -26,7 +26,7 @@ describe('AuctionDeposit', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply,
+      initialSupply
     ])
     await tokenContract.waitForDeployment()
     await tokenContract
@@ -34,21 +34,18 @@ describe('AuctionDeposit', function () {
       .transfer(user1.address, parseEther('1000000'))
 
     // membershipNFTのデプロイ
-    membershipNFT = await ethers.deployContract('MockERC721', [
-      'membershipNFT',
-      'MSNFT',
-    ])
+    membershipNFT = await ethers.deployContract('MockERC1155', [])
     await membershipNFT.waitForDeployment()
 
     // monoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
-      'mono',
+      'mono'
     ])
     await monoNFTContract.waitForDeployment()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress(),
+      await monoNFTContract.getAddress()
     ])
     await auctionDepositContract.waitForDeployment()
 
