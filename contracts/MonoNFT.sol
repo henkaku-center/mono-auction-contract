@@ -7,7 +7,7 @@ import "./interfaces/IMonoNFT.sol";
 import "./interfaces/IAuctionDeposit.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     using Counters for Counters.Counter;
@@ -30,7 +30,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
 
     modifier onlyMonoAuctionMember() {
         require(
-            ERC1155(membershipNFTAddress).balanceOf(msg.sender, 1) >= 1,
+            IERC1155(membershipNFTAddress).balanceOf(msg.sender, 1) >= 1,
             "MonoNFT: You don't have the auction member NFT"
         );
         _;
