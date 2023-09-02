@@ -4,7 +4,7 @@ import {
   IMonoNFT,
   MockERC20,
   MonoNFT,
-  MockERC721,
+  MockERC1155,
 } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { parseEther } from 'ethers'
@@ -23,7 +23,7 @@ describe('MonoNFT', () => {
   let tokenContract: MockERC20
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
-  let membershipNFT: MockERC721
+  let membershipNFT: MockERC1155
 
   const defaultAdminRole = ethers.ZeroHash
 
@@ -53,13 +53,10 @@ describe('MonoNFT', () => {
     ).wait()
 
     // メンバーシップNFTのデプロイと初期配布
-    membershipNFT = await ethers.deployContract('MockERC721', [
-      'membershipNFT',
-      'MSNFT',
-    ])
+    membershipNFT = await ethers.deployContract('MockERC1155', [])
     await membershipNFT.waitForDeployment()
-    await (await membershipNFT.mint(user1.address)).wait()
-    await (await membershipNFT.mint(user2.address)).wait()
+    await (await membershipNFT.mint(user1.address, 1)).wait()
+    await (await membershipNFT.mint(user2.address, 1)).wait()
 
     // MonoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [

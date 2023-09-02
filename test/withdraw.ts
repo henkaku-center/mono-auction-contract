@@ -6,7 +6,7 @@ import {
   MockERC20,
   MaliciousAttacker,
   MonoNFT,
-  MockERC721,
+  MockERC1155
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -18,7 +18,7 @@ describe('AuctionWithdraw', function () {
   let attackerContract: MaliciousAttacker
   let treasury: SignerWithAddress
   let monoNFTContract: MonoNFT
-  let membershipNFT: MockERC721
+  let membershipNFT: MockERC1155
 
   beforeEach(async function () {
     ;[admin, user1, treasury] = await ethers.getSigners()
@@ -28,7 +28,7 @@ describe('AuctionWithdraw', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply,
+      initialSupply
     ])
     await tokenContract.waitForDeployment()
 
@@ -39,23 +39,20 @@ describe('AuctionWithdraw', function () {
     ).wait()
 
     // メンバーシップNFTのデプロイと初期配布
-    membershipNFT = await ethers.deployContract('MockERC721', [
-      'membershipNFT',
-      'MSNFT',
-    ])
+    membershipNFT = await ethers.deployContract('MockERC1155', [])
     await membershipNFT.waitForDeployment()
-    await (await membershipNFT.mint(user1.address)).wait()
+    await (await membershipNFT.mint(user1.address, 1)).wait()
 
     // MonoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
-      'mono',
+      'mono'
     ])
     await monoNFTContract.waitForDeployment()
 
     // AuctionDepositのデプロイ
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress(),
+      await monoNFTContract.getAddress()
     ])
     await auctionDepositContract.waitForDeployment()
 
