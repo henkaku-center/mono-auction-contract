@@ -6,7 +6,7 @@ import {
   MockERC20,
   MaliciousAttacker,
   MonoNFT,
-  MockERC1155
+  MockERC1155,
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -28,7 +28,7 @@ describe('AuctionWithdraw', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
+      initialSupply,
     ])
     await tokenContract.waitForDeployment()
 
@@ -49,13 +49,13 @@ describe('AuctionWithdraw', function () {
       'mono',
       1,
       2,
-      3
+      3,
     ])
     await monoNFTContract.waitForDeployment()
 
     // AuctionDepositのデプロイ
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress()
+      await monoNFTContract.getAddress(),
     ])
     await auctionDepositContract.waitForDeployment()
 
@@ -114,5 +114,35 @@ describe('AuctionWithdraw', function () {
     // Assert that the attacker wasn't able to steal funds
     const stolenFunds = await attackerContract.stolenFunds()
     expect(Number(formatEther(stolenFunds))).to.equal(0)
+  })
+
+  it('should revert withdraw when locked', async function () {
+    await expect(await auctionDepositContract.connect(admin).lock()).not.to.be
+      .reverted
+    expect(await auctionDepositContract.locked()).to.be.true
+    await expect(
+      auctionDepositContract.connect(user1).withdraw(parseEther('1000'))
+    ).to.be.revertedWith('AuctionDeposit: Locked')
+  })
+
+  it('should withdraw', async function () {
+    const initialBalanceOfUser1 = await tokenContract.balanceOf(user1.address)
+    const initialBalanceOfAuctionDeposit = await tokenContract.balanceOf(
+      auctionDepositContract.getAddress()
+    )
+
+    await auctionDepositContract.connect(user1).withdraw(parseEther('1000'))
+
+    const finalBalanceOfUser1 = await tokenContract.balanceOf(user1.address)
+    const finalBalanceOfAuctionDeposit = await tokenContract.balanceOf(
+      auctionDepositContract.getAddress()
+    )
+
+    expect(finalBalanceOfUser1 - initialBalanceOfUser1).to.equal(
+      parseEther('1000')
+    )
+    expect(
+      initialBalanceOfAuctionDeposit - finalBalanceOfAuctionDeposit
+    ).to.equal(parseEther('1000'))
   })
 })
