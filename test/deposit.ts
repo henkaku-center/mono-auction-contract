@@ -5,7 +5,7 @@ import {
   AuctionDeposit,
   MockERC20,
   MonoNFT,
-  MockERC1155,
+  MockERC1155
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -26,7 +26,7 @@ describe('AuctionDeposit', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply,
+      initialSupply
     ])
     await tokenContract.waitForDeployment()
     await tokenContract
@@ -41,11 +41,14 @@ describe('AuctionDeposit', function () {
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
       'mono',
+      1,
+      2,
+      3
     ])
     await monoNFTContract.waitForDeployment()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress(),
+      await monoNFTContract.getAddress()
     ])
     await auctionDepositContract.waitForDeployment()
 

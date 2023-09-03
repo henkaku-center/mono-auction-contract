@@ -87,6 +87,16 @@ interface IMonoNFT is IERC4907, IAccessControl {
         address _auctionDepositContractAddress
     ) external;
 
+    // Get the total number of monoNFTs of an user
+    /// @param user: ユーザーアドレス, The address of the user
+    /// @return ユーザーが落札しているmonoNFTの数, The total number of monoNFTs of an user
+    function confirmedMonosOf(address user) external view returns (uint256);
+
+    // Get the max number of monoNFTs of an user
+    /// @param user: ユーザーアドレス, The address of the user
+    /// @return ユーザーが落札できるmonoNFTの最大数, The max number of monoNFTs of an user
+    function maxConfirmedMonosOf(address user) external view returns (uint256);
+
     // Admin register a monoNFT
     /// @param donor: monoの寄贈者, Donor of the mono
     /// @param expiresDuration: monoNFTのデフォルトの利用権保有期間, Default expires duration of the monoNFT
