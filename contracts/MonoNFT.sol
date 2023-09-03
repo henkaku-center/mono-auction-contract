@@ -211,6 +211,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         uint64 expires = uint64(block.timestamp) +
             _monoNFTs[tokenId].expiresDuration;
         _latestWinner[tokenId] = Winner(winner, price, expires);
+        _approve(winner, tokenId);
         emit ConfirmWinner(tokenId, winner, price);
     }
 
@@ -297,6 +298,12 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
             nfts[i] = _monoNFTs[i + 1];
         }
         return nfts;
+    }
+
+    function getHistoryOfWinners(
+        uint256 tokenId
+    ) external view returns (Winner[] memory) {
+        return _historyOfWinners[tokenId];
     }
 
     function supportsInterface(

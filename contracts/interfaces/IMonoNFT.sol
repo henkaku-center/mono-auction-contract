@@ -151,4 +151,9 @@ interface IMonoNFT is IERC4907, IAccessControl {
 
     // Get the monoNFTs
     function getNFTs() external view returns (MonoNFT[] memory);
+
+    // Get history of winners array
+    function getHistoryOfWinners(
+        uint256 tokenId
+    ) external view returns (Winner[] memory);
 }
