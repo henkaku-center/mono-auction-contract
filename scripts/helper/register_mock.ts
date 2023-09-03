@@ -23,8 +23,12 @@ const main = async () => {
     status: 0,
     sharesOfCommunityToken: [
       {
+        shareHolder: donor.address,
+        shareRatio: 50,
+      },
+      {
         shareHolder: communityTresury.address,
-        shareRatio: 100,
+        shareRatio: 50,
       },
     ],
   }

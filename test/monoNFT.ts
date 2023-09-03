@@ -98,6 +98,9 @@ describe('MonoNFT', () => {
       )
     ).wait()
     await (await monoNFTContract.setAuctionAdminAddress(admin.address)).wait()
+    await (
+      await monoNFTContract.setCommunityTreasuryAddress(treasury.address)
+    ).wait()
 
     // AuctionDepositの初期設定
     await (
@@ -570,6 +573,15 @@ describe('MonoNFT', () => {
 
       expect(await monoNFTContract.ownerOf(currentTokenId)).to.equal(
         user1.address
+      )
+
+      const monoNFT = await monoNFTContract.getNFTs()
+      expect(monoNFT[0].sharesOfCommunityToken.length).to.equal(1)
+      expect(monoNFT[0].sharesOfCommunityToken[0].shareHolder).to.equal(
+        treasury.address
+      )
+      expect(monoNFT[0].sharesOfCommunityToken[0].shareRatio).to.equal(
+        BigInt(100)
       )
     })
   })

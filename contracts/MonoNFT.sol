@@ -42,7 +42,10 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
 
     modifier onlyMonoAuctionMember() {
         require(
-            IERC1155(membershipNFTAddress).balanceOf(msg.sender, 1) >= 1,
+            IERC1155(membershipNFTAddress).balanceOf(
+                msg.sender,
+                basicMembershipTokenId
+            ) >= 1,
             "MonoNFT: You don't have the auction member NFT"
         );
         _;
