@@ -14,7 +14,7 @@ async function main() {
   let monoNFTContract: MonoNFT
   let membershipNFT: MockERC1155
 
-  const { admin } = LocalWalletAddresses()
+  const { admin, communityTresury } = LocalWalletAddresses()
 
   tokenContract = await ethers.deployContract('MockERC20', [
     'My Token',
@@ -26,7 +26,13 @@ async function main() {
   membershipNFT = await ethers.deployContract('MockERC1155')
   await membershipNFT.waitForDeployment()
 
-  monoNFTContract = await ethers.deployContract('MonoNFT', ['monoNFT', 'mono'])
+  monoNFTContract = await ethers.deployContract('MonoNFT', [
+    'monoNFT',
+    'mono',
+    1,
+    2,
+    3,
+  ])
 
   auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
     await monoNFTContract.getAddress(),
@@ -45,6 +51,9 @@ async function main() {
     )
   ).wait()
   await (await monoNFTContract.setAuctionAdminAddress(admin.address)).wait()
+  await (
+    await monoNFTContract.setCommunityTreasuryAddress(communityTresury.address)
+  ).wait()
 
   // AuctionDepositの初期設定
   await (
