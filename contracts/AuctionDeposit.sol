@@ -97,7 +97,6 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         }
     }
 
-    //仮で入れてるのであとから実装し直す必要あり
     function withdraw(uint256 amount) external override {
         require(
             _deposits[msg.sender] >= amount,
@@ -110,10 +109,9 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         emit Withdraw(msg.sender, amount);
     }
 
-    //仮で入れてるのであとから実装し直す必要あり
     function getAllDeposit()
         external
-        view
+        pure
         override
         returns (DepositInfo[] memory)
     {
@@ -121,7 +119,6 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         return depositInfos;
     }
 
-    //仮で入れてるのであとから実装し直す必要あり
     function getDepositByAddress(
         address user
     ) external view override returns (DepositInfo memory) {
