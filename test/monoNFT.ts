@@ -26,19 +26,6 @@ describe('MonoNFT', () => {
 
   const defaultAdminRole = ethers.ZeroHash
 
-  // const checkConfirmedMonosOf = async (address: string) => {
-  //   console.log(
-  //     'confirmedMonosOf   ',
-  //     address,
-  //     await monoNFTContract.confirmedMonosOf(address)
-  //   )
-  //   console.log(
-  //     'maxConfirmedMonosOf',
-  //     address,
-  //     await monoNFTContract.maxConfirmedMonosOf(address)
-  //   )
-  // }
-
   beforeEach(async () => {
     ;[admin, admin2, user1, user2, notUser, treasury] =
       await ethers.getSigners()
@@ -324,6 +311,7 @@ describe('MonoNFT', () => {
 
   describe('confirmWinner', () => {
     let confirmWinnerTimestamp
+    let updateStatusToInAuction: (tokenId: number) => Promise<void>
 
     beforeEach(async () => {
       const monoNFTMetadata = {
@@ -339,27 +327,37 @@ describe('MonoNFT', () => {
           },
         ],
       }
-      await monoNFTContract
-        .connect(admin)
-        .register(
-          monoNFTMetadata.donor,
-          monoNFTMetadata.expiresDuration,
-          monoNFTMetadata.uri,
-          monoNFTMetadata.sharesOfCommunityToken,
-          admin.address
-        )
-      await monoNFTContract
-        .connect(admin)
-        .register(
-          monoNFTMetadata.donor,
-          monoNFTMetadata.expiresDuration,
-          monoNFTMetadata.uri,
-          monoNFTMetadata.sharesOfCommunityToken,
-          admin.address
-        )
+
+      const registerMonoNFT = async () => {
+        await monoNFTContract
+          .connect(admin)
+          .register(
+            monoNFTMetadata.donor,
+            monoNFTMetadata.expiresDuration,
+            monoNFTMetadata.uri,
+            monoNFTMetadata.sharesOfCommunityToken,
+            admin.address
+          )
+      }
+
+      ;[...Array(6)].forEach(async () => await registerMonoNFT())
+
+      updateStatusToInAuction = async (tokenId: number) => {
+        await monoNFTContract.connect(admin).updateMonoNFTStatus(tokenId, 1)
+      }
+    })
+
+    it('should revert confirmWinner by not in auction', async () => {
+      await expect(
+        monoNFTContract
+          .connect(admin)
+          .confirmWinner(user1.address, 1, parseEther('1000'))
+      ).to.be.revertedWith('MonoNFT: NFT is not in auction')
     })
 
     it('should confirmWinner without duration', async () => {
+      await updateStatusToInAuction(1)
+
       await expect(
         await monoNFTContract
           .connect(admin)
@@ -377,6 +375,8 @@ describe('MonoNFT', () => {
     })
 
     it('should revert confirmWinner by Insufficient membership', async () => {
+      await updateStatusToInAuction(1)
+
       expect(await monoNFTContract.confirmedMonosOf(user1.address)).to.equal(0)
       expect(await monoNFTContract.maxConfirmedMonosOf(user1.address)).to.equal(
         1
@@ -401,6 +401,9 @@ describe('MonoNFT', () => {
     })
 
     it('should confirm second monoNFT', async () => {
+      await updateStatusToInAuction(1)
+      await updateStatusToInAuction(2)
+
       expect(await monoNFTContract.confirmedMonosOf(user1.address)).to.equal(0)
       expect(await monoNFTContract.maxConfirmedMonosOf(user1.address)).to.equal(
         1
@@ -425,6 +428,61 @@ describe('MonoNFT', () => {
           .connect(admin)
           .confirmWinner(user1.address, 2, parseEther('1000'))
       ).to.emit(monoNFTContract, 'ConfirmWinner')
+    })
+
+    it('should revert confirming 6th MonoNFT', async () => {
+      ;[...Array(6)].forEach(
+        async (_, i) => await updateStatusToInAuction(i + 1)
+      )
+
+      await expect(await membershipNFT.mint(user1.address, 2)).not.to.be
+        .reverted
+
+      expect(await monoNFTContract.confirmedMonosOf(user1.address)).to.equal(0)
+      expect(await monoNFTContract.maxConfirmedMonosOf(user1.address)).to.equal(
+        5
+      )
+
+      await expect(
+        await monoNFTContract
+          .connect(admin)
+          .confirmWinner(user1.address, 1, parseEther('1'))
+      ).to.emit(monoNFTContract, 'ConfirmWinner')
+
+      await expect(
+        await monoNFTContract
+          .connect(admin)
+          .confirmWinner(user1.address, 2, parseEther('1'))
+      ).to.emit(monoNFTContract, 'ConfirmWinner')
+
+      await expect(
+        await monoNFTContract
+          .connect(admin)
+          .confirmWinner(user1.address, 3, parseEther('1'))
+      ).to.emit(monoNFTContract, 'ConfirmWinner')
+
+      await expect(
+        await monoNFTContract
+          .connect(admin)
+          .confirmWinner(user1.address, 4, parseEther('1'))
+      ).to.emit(monoNFTContract, 'ConfirmWinner')
+
+      await expect(
+        await monoNFTContract
+          .connect(admin)
+          .confirmWinner(user1.address, 5, parseEther('1'))
+      ).to.emit(monoNFTContract, 'ConfirmWinner')
+
+      expect(await monoNFTContract.confirmedMonosOf(user1.address)).to.equal(5)
+      expect(await monoNFTContract.maxConfirmedMonosOf(user1.address)).to.equal(
+        5
+      )
+
+      await expect(
+        monoNFTContract
+          .connect(admin)
+          .confirmWinner(user1.address, 6, parseEther('1'))
+      ).to.be.revertedWith('MonoNFT: Insufficient membership')
     })
   })
 
@@ -454,15 +512,28 @@ describe('MonoNFT', () => {
           },
         ],
       }
-      await monoNFTContract
-        .connect(admin)
-        .register(
-          monoNFTMetadata.donor,
-          monoNFTMetadata.expiresDuration,
-          monoNFTMetadata.uri,
-          monoNFTMetadata.sharesOfCommunityToken,
-          admin.address
-        )
+
+      const registerMonoNFT = async () => {
+        await monoNFTContract
+          .connect(admin)
+          .register(
+            monoNFTMetadata.donor,
+            monoNFTMetadata.expiresDuration,
+            monoNFTMetadata.uri,
+            monoNFTMetadata.sharesOfCommunityToken,
+            admin.address
+          )
+      }
+
+      ;[...Array(6)].forEach(async () => await registerMonoNFT())
+
+      const updateStatusToInAuction = async (tokenId: number) => {
+        await monoNFTContract.connect(admin).updateMonoNFTStatus(tokenId, 1)
+      }
+
+      ;[...Array(6)].forEach(
+        async (_, i) => await updateStatusToInAuction(i + 1)
+      )
 
       await monoNFTContract
         .connect(admin)

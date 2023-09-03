@@ -149,12 +149,14 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
             ids
         );
         if (nfts[0] >= 1) {
-            maxConfirmedMonosOfUser = 1;
             if (nfts[1] >= 1) {
-                maxConfirmedMonosOfUser = 5;
                 if (nfts[2] >= 1) {
                     maxConfirmedMonosOfUser = type(uint256).max;
+                } else {
+                    maxConfirmedMonosOfUser = 5;
                 }
+            } else {
+                maxConfirmedMonosOfUser = 1;
             }
         }
         return maxConfirmedMonosOfUser;
@@ -209,7 +211,10 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         uint256 tokenId,
         uint256 price
     ) external onlyRole(DEFAULT_ADMIN_ROLE) isEligible(winner) {
-        // TODO: Check whether the winner has the auction member NFT
+        require(
+            _monoNFTs[tokenId].status == MonoNFTStatus.IN_AUCTION,
+            "MonoNFT: NFT is not in auction"
+        );
         _monoNFTs[tokenId].status = MonoNFTStatus.CONFIRMED;
         uint64 expires = uint64(block.timestamp) +
             _monoNFTs[tokenId].expiresDuration;
