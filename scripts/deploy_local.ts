@@ -1,20 +1,20 @@
-import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers'
 import { ethers } from 'hardhat'
 import {
   AuctionDeposit,
   MockERC20,
-  MockERC721,
+  MockERC1155,
   MonoNFT,
 } from '../typechain-types'
 import { parseEther } from 'ethers'
+import { LocalWalletAddresses } from './helper/address'
 
 async function main() {
-  const treasuryAddr = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'
-  let treasury: SignerWithAddress
   let tokenContract: MockERC20 // This should be a mock ERC20 token for testing
   let auctionDepositContract: AuctionDeposit
   let monoNFTContract: MonoNFT
-  let membershipNFT: MockERC721
+  let membershipNFT: MockERC1155
+
+  const { admin } = LocalWalletAddresses()
 
   tokenContract = await ethers.deployContract('MockERC20', [
     'My Token',
@@ -23,10 +23,7 @@ async function main() {
   ])
   await tokenContract.waitForDeployment()
 
-  membershipNFT = await ethers.deployContract('MockERC721', [
-    'membershipNFT',
-    'MSNFT',
-  ])
+  membershipNFT = await ethers.deployContract('MockERC1155')
   await membershipNFT.waitForDeployment()
 
   monoNFTContract = await ethers.deployContract('MonoNFT', ['monoNFT', 'mono'])
@@ -47,6 +44,7 @@ async function main() {
       await auctionDepositContract.getAddress()
     )
   ).wait()
+  await (await monoNFTContract.setAuctionAdminAddress(admin.address)).wait()
 
   // AuctionDepositの初期設定
   await (
@@ -54,10 +52,17 @@ async function main() {
       await tokenContract.getAddress()
     )
   ).wait()
-  await (await auctionDepositContract.setTreasuryAddress(treasuryAddr)).wait()
+  await (
+    await auctionDepositContract.setCommunityTokenAddress(
+      await tokenContract.getAddress()
+    )
+  ).wait()
+  await (
+    await auctionDepositContract.setAuctionAdminAddress(admin.address)
+  ).wait()
 
   console.log('MockERC20:', await tokenContract.getAddress())
-  console.log('MockERC721:', await membershipNFT.getAddress())
+  console.log('MockERC1155:', await membershipNFT.getAddress())
   console.log('MonoNFT:', await monoNFTContract.getAddress())
   console.log('AuctionDeposit:', await auctionDepositContract.getAddress())
 }

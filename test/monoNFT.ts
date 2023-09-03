@@ -11,7 +11,6 @@ import { parseEther } from 'ethers'
 import { expect } from 'chai'
 import { assert } from 'chai'
 import { BigNumberish } from 'ethers'
-import dayjs from 'dayjs'
 
 describe('MonoNFT', () => {
   let admin: SignerWithAddress
@@ -89,9 +88,6 @@ describe('MonoNFT', () => {
       await auctionDepositContract.setCommunityTokenAddress(
         await tokenContract.getAddress()
       )
-    ).wait()
-    await (
-      await auctionDepositContract.setTreasuryAddress(treasury.address)
     ).wait()
     await (
       await auctionDepositContract.setAuctionAdminAddress(admin.address)

@@ -13,7 +13,6 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
 
     address public communityTokenAddr;
     address public monoNFTAddr;
-    address public treasuryAddr;
     address public auctionAdminAddr;
     uint256 public maxDeposit = 2500 * 10 ** 18;
 
@@ -42,12 +41,6 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         address _monoNFTAddr
     ) external onlyMonoAuctionAdmin {
         monoNFTAddr = _monoNFTAddr;
-    }
-
-    function setTreasuryAddress(
-        address _treasuryAddr
-    ) external onlyMonoAuctionAdmin {
-        treasuryAddr = _treasuryAddr;
     }
 
     function setAuctionAdminAddress(
@@ -137,11 +130,5 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
             amount: _deposits[user]
         });
         return depositInfo;
-    }
-
-    //仮で入れてるのであとから実装し直す必要あり
-    function sendToTreasury(uint256 amount) external override {
-        IERC20(communityTokenAddr).safeTransfer(msg.sender, amount);
-        emit SendToTreasury(msg.sender, amount);
     }
 }

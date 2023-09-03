@@ -5,7 +5,7 @@ import {
   AuctionDeposit,
   MockERC20,
   MonoNFT,
-  MockERC1155
+  MockERC1155,
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -26,7 +26,7 @@ describe('AuctionDeposit', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
+      initialSupply,
     ])
     await tokenContract.waitForDeployment()
     await tokenContract
@@ -40,12 +40,12 @@ describe('AuctionDeposit', function () {
     // monoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
-      'mono'
+      'mono',
     ])
     await monoNFTContract.waitForDeployment()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress()
+      await monoNFTContract.getAddress(),
     ])
     await auctionDepositContract.waitForDeployment()
 
@@ -69,37 +69,8 @@ describe('AuctionDeposit', function () {
       )
     ).wait()
     await (
-      await auctionDepositContract.setTreasuryAddress(treasury.address)
-    ).wait()
-    await (
       await auctionDepositContract.setAuctionAdminAddress(admin.address)
     ).wait()
-  })
-
-  describe('Set treasury address', () => {
-    it('should check initial treasury address', async () => {
-      expect(await auctionDepositContract.treasuryAddr()).to.equal(
-        treasury.address
-      )
-    })
-
-    it('should revert if not admin', async () => {
-      await expect(
-        auctionDepositContract.connect(user1).setTreasuryAddress(user1.address)
-      ).to.be.revertedWith('AuctionDeposit: Only admins of MonoNFT can call')
-    })
-
-    it('should allow admin to set treasury address', async () => {
-      await expect(
-        await auctionDepositContract
-          .connect(admin)
-          .setTreasuryAddress(user1.address)
-      ).not.to.be.reverted
-
-      expect(await auctionDepositContract.treasuryAddr()).to.equal(
-        user1.address
-      )
-    })
   })
 
   it('should allow users to deposit tokens', async function () {

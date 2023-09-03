@@ -6,7 +6,7 @@ import {
   MockERC20,
   MaliciousAttacker,
   MonoNFT,
-  MockERC1155
+  MockERC1155,
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -28,7 +28,7 @@ describe('AuctionWithdraw', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
+      initialSupply,
     ])
     await tokenContract.waitForDeployment()
 
@@ -46,13 +46,13 @@ describe('AuctionWithdraw', function () {
     // MonoNFTのデプロイ
     monoNFTContract = await ethers.deployContract('MonoNFT', [
       'monoNFT',
-      'mono'
+      'mono',
     ])
     await monoNFTContract.waitForDeployment()
 
     // AuctionDepositのデプロイ
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress()
+      await monoNFTContract.getAddress(),
     ])
     await auctionDepositContract.waitForDeployment()
 
@@ -74,9 +74,6 @@ describe('AuctionWithdraw', function () {
       await auctionDepositContract.setCommunityTokenAddress(
         await tokenContract.getAddress()
       )
-    ).wait()
-    await (
-      await auctionDepositContract.setTreasuryAddress(treasury.address)
     ).wait()
     await (
       await auctionDepositContract.setAuctionAdminAddress(admin.address)
