@@ -17,6 +17,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     address public auctionDepositContractAddress;
     address public membershipNFTAddress;
     address public auctionAdminAddress;
+    address public communityTreasuryAddress;
 
     mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
     mapping(uint256 => Winner) public _latestWinner;
@@ -67,6 +68,12 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         address _auctionAdminAddress
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         auctionAdminAddress = _auctionAdminAddress;
+    }
+
+    function setCommunityTreasuryAddress(
+        address _communityTreasuryAddress
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        communityTreasuryAddress = _communityTreasuryAddress;
     }
 
     function register(
@@ -147,7 +154,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
             monoNFT.sharesOfCommunityToken
         );
 
-        // @dev If first claim of right of use, set all share to auction admin for next claims
+        // @dev If first claim of right of use, set all share to community treasury for next claims
         // @dev only for right of use, setUser
         if (rightType == MonoNFTRightType.RIGHT_OF_USE) {
             setUser(tokenId, winnerInfo.winner, winnerInfo.expires);
@@ -155,7 +162,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
                 delete monoNFT.sharesOfCommunityToken;
                 monoNFT.sharesOfCommunityToken.push(
                     ShareOfCommunityToken({
-                        shareHolder: auctionAdminAddress,
+                        shareHolder: communityTreasuryAddress,
                         shareRatio: 100
                     })
                 );
