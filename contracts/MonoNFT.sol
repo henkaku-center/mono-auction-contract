@@ -19,21 +19,41 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     address public auctionAdminAddress;
     address public communityTreasuryAddress;
 
+    uint256 public basicMembershipTokenId;
+    uint256 public silverMembershipTokenId;
+    uint256 public goldMembershipTokenId;
+
     mapping(uint256 => MonoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
     mapping(uint256 => Winner) public _latestWinner;
     mapping(uint256 => Winner[]) public _historyOfWinners;
 
     constructor(
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        uint256 _basicMembershipTokenId,
+        uint256 _silverMembershipTokenId,
+        uint256 _goldMembershipTokenId
     ) ERC721(_name, _symbol) {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        basicMembershipTokenId = _basicMembershipTokenId;
+        silverMembershipTokenId = _silverMembershipTokenId;
+        goldMembershipTokenId = _goldMembershipTokenId;
     }
 
     modifier onlyMonoAuctionMember() {
         require(
             IERC1155(membershipNFTAddress).balanceOf(msg.sender, 1) >= 1,
             "MonoNFT: You don't have the auction member NFT"
+        );
+        _;
+    }
+
+    modifier isEligible(address user) {
+        uint256 confirmedMonosOfUser = confirmedMonosOf(user);
+        uint256 maxConfirmedMonosOfUser = maxConfirmedMonosOf(user);
+        require(
+            confirmedMonosOfUser < maxConfirmedMonosOfUser,
+            "MonoNFT: Insufficient membership"
         );
         _;
     }
@@ -74,6 +94,67 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         address _communityTreasuryAddress
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         communityTreasuryAddress = _communityTreasuryAddress;
+    }
+
+    function setBasicMembershipTokenId(
+        uint256 _basicMembershipTokenId
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        basicMembershipTokenId = _basicMembershipTokenId;
+    }
+
+    function setSilverMembershipTokenId(
+        uint256 _silverMembershipTokenId
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        silverMembershipTokenId = _silverMembershipTokenId;
+    }
+
+    function setGoldMembershipTokenId(
+        uint256 _goldMembershipTokenId
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        goldMembershipTokenId = _goldMembershipTokenId;
+    }
+
+    function confirmedMonosOf(address user) public view returns (uint256) {
+        uint256 confirmedMonosOfUser;
+        uint256 tokenIds = _tokenIds.current();
+        for (uint256 i = 1; i <= tokenIds; ++i) {
+            Winner memory latestWinner = _latestWinner[i];
+            if (
+                latestWinner.winner == user &&
+                latestWinner.expires > block.timestamp
+            ) {
+                ++confirmedMonosOfUser;
+            }
+        }
+        return confirmedMonosOfUser;
+    }
+
+    function maxConfirmedMonosOf(address user) public view returns (uint256) {
+        address[] memory accounts = new address[](3);
+        accounts[0] = user;
+        accounts[1] = user;
+        accounts[2] = user;
+
+        uint256[] memory ids = new uint256[](3);
+        ids[0] = basicMembershipTokenId;
+        ids[1] = silverMembershipTokenId;
+        ids[2] = goldMembershipTokenId;
+
+        uint256 maxConfirmedMonosOfUser;
+        uint256[] memory nfts = IERC1155(membershipNFTAddress).balanceOfBatch(
+            accounts,
+            ids
+        );
+        if (nfts[0] >= 1) {
+            maxConfirmedMonosOfUser = 1;
+            if (nfts[1] >= 1) {
+                maxConfirmedMonosOfUser = 5;
+                if (nfts[2] >= 1) {
+                    maxConfirmedMonosOfUser = type(uint256).max;
+                }
+            }
+        }
+        return maxConfirmedMonosOfUser;
     }
 
     function register(
@@ -124,7 +205,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         address winner,
         uint256 tokenId,
         uint256 price
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) isEligible(winner) {
         // TODO: Check whether the winner has the auction member NFT
         _monoNFTs[tokenId].status = MonoNFTStatus.CONFIRMED;
         uint64 expires = uint64(block.timestamp) +
