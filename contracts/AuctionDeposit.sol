@@ -15,6 +15,7 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
     address public monoNFTAddr;
     address public auctionAdminAddr;
     uint256 public maxDeposit = 2500 * 10 ** 18;
+    bool public locked;
 
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
@@ -28,6 +29,11 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
             IMonoNFT(monoNFTAddr).hasRole(bytes32(0), msg.sender),
             "AuctionDeposit: Only admins of MonoNFT can call"
         );
+        _;
+    }
+
+    modifier whenNotLocked() {
+        require(!locked, "AuctionDeposit: Locked");
         _;
     }
 
@@ -49,7 +55,15 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         auctionAdminAddr = _auctionAdminAddr;
     }
 
-    function deposit(uint256 amount) external override {
+    function lock() external onlyMonoAuctionAdmin {
+        locked = true;
+    }
+
+    function unlock() external onlyMonoAuctionAdmin {
+        locked = false;
+    }
+
+    function deposit(uint256 amount) external override whenNotLocked {
         require(amount > 0, "AuctionDeposit: Amount should be greater than 0");
         require(
             _deposits[msg.sender] + amount <= maxDeposit,
@@ -97,7 +111,7 @@ contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
         }
     }
 
-    function withdraw(uint256 amount) external override {
+    function withdraw(uint256 amount) external override whenNotLocked {
         require(
             _deposits[msg.sender] >= amount,
             "AuctionDeposit: Withdraw amount exceeds deposit"

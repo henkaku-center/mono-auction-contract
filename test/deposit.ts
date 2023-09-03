@@ -5,7 +5,7 @@ import {
   AuctionDeposit,
   MockERC20,
   MonoNFT,
-  MockERC1155
+  MockERC1155,
 } from '../typechain-types'
 import { formatEther, parseEther } from 'ethers'
 
@@ -26,7 +26,7 @@ describe('AuctionDeposit', function () {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
+      initialSupply,
     ])
     await tokenContract.waitForDeployment()
     await tokenContract
@@ -43,12 +43,12 @@ describe('AuctionDeposit', function () {
       'mono',
       1,
       2,
-      3
+      3,
     ])
     await monoNFTContract.waitForDeployment()
 
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress()
+      await monoNFTContract.getAddress(),
     ])
     await auctionDepositContract.waitForDeployment()
 
@@ -74,6 +74,15 @@ describe('AuctionDeposit', function () {
     await (
       await auctionDepositContract.setAuctionAdminAddress(admin.address)
     ).wait()
+  })
+
+  it('should revert deposit when locked', async function () {
+    await expect(await auctionDepositContract.connect(admin).lock()).not.to.be
+      .reverted
+    expect(await auctionDepositContract.locked()).to.be.true
+    await expect(
+      auctionDepositContract.connect(user1).deposit(parseEther('1000'))
+    ).to.be.revertedWith('AuctionDeposit: Locked')
   })
 
   it('should allow users to deposit tokens', async function () {
