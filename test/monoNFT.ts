@@ -156,7 +156,7 @@ describe('MonoNFT', () => {
   })
 
   it('should register monoNFT', async () => {
-    const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
+    const monoNFTMetadata = {
       donor: user1.address,
       //半年
       expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
@@ -173,7 +173,13 @@ describe('MonoNFT', () => {
     expect(
       await monoNFTContract
         .connect(admin)
-        .register(monoNFTMetadata, admin.address)
+        .register(
+          monoNFTMetadata.donor,
+          monoNFTMetadata.expiresDuration,
+          monoNFTMetadata.uri,
+          monoNFTMetadata.sharesOfCommunityToken,
+          admin.address
+        )
     ).to.emit(monoNFTContract, 'RegisterMonoNFT')
 
     const tokenURI = await monoNFTContract.tokenURI(1)
@@ -200,7 +206,7 @@ describe('MonoNFT', () => {
         shareRatio: 10,
       },
     ]
-    const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
+    const monoNFTMetadata = {
       donor: user1.address,
       //半年
       expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
@@ -210,7 +216,15 @@ describe('MonoNFT', () => {
     }
 
     await expect(
-      monoNFTContract.connect(admin).register(monoNFTMetadata, admin.address)
+      monoNFTContract
+        .connect(admin)
+        .register(
+          monoNFTMetadata.donor,
+          monoNFTMetadata.expiresDuration,
+          monoNFTMetadata.uri,
+          monoNFTMetadata.sharesOfCommunityToken,
+          admin.address
+        )
     ).to.be.revertedWith(
       'MonoNFT: The total ratio of shares of community token should be 100'
     )
@@ -228,7 +242,7 @@ describe('MonoNFT', () => {
     let registerMonoNFT: any
     it('should register MonoNFT for tests', async () => {
       registerMonoNFT = async () => {
-        const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
+        const monoNFTMetadata = {
           donor: user1.address,
           //半年
           expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
@@ -243,7 +257,13 @@ describe('MonoNFT', () => {
         }
         await monoNFTContract
           .connect(admin)
-          .register(monoNFTMetadata, admin.address)
+          .register(
+            monoNFTMetadata.donor,
+            monoNFTMetadata.expiresDuration,
+            monoNFTMetadata.uri,
+            monoNFTMetadata.sharesOfCommunityToken,
+            admin.address
+          )
       }
 
       await registerMonoNFT()
@@ -287,7 +307,7 @@ describe('MonoNFT', () => {
     let confirmWinnerTimestamp
 
     beforeEach(async () => {
-      const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
+      const monoNFTMetadata = {
         donor: user1.address,
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
@@ -302,10 +322,22 @@ describe('MonoNFT', () => {
       }
       await monoNFTContract
         .connect(admin)
-        .register(monoNFTMetadata, admin.address)
+        .register(
+          monoNFTMetadata.donor,
+          monoNFTMetadata.expiresDuration,
+          monoNFTMetadata.uri,
+          monoNFTMetadata.sharesOfCommunityToken,
+          admin.address
+        )
       await monoNFTContract
         .connect(admin)
-        .register(monoNFTMetadata, admin.address)
+        .register(
+          monoNFTMetadata.donor,
+          monoNFTMetadata.expiresDuration,
+          monoNFTMetadata.uri,
+          monoNFTMetadata.sharesOfCommunityToken,
+          admin.address
+        )
     })
 
     it('should confirmWinner without duration', async () => {
@@ -328,7 +360,6 @@ describe('MonoNFT', () => {
 
   describe('Claim', () => {
     const currentTokenId: number = 1
-    let monoNFTMetadata: IMonoNFT.MonoNFTStruct
     let confirmWinnerTimestamp
     let getDepositAmountByAddress: (address: string) => Promise<bigint>
     let approveAndDeposit: (
@@ -336,7 +367,7 @@ describe('MonoNFT', () => {
       amount: number
     ) => Promise<void>
     beforeEach(async () => {
-      monoNFTMetadata = {
+      const monoNFTMetadata = {
         donor: user1.address,
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
@@ -355,7 +386,13 @@ describe('MonoNFT', () => {
       }
       await monoNFTContract
         .connect(admin)
-        .register(monoNFTMetadata, admin.address)
+        .register(
+          monoNFTMetadata.donor,
+          monoNFTMetadata.expiresDuration,
+          monoNFTMetadata.uri,
+          monoNFTMetadata.sharesOfCommunityToken,
+          admin.address
+        )
 
       await monoNFTContract
         .connect(admin)
@@ -469,7 +506,7 @@ describe('MonoNFT', () => {
         user1.address
       )
       expect(await monoNFTContract.userExpires(currentTokenId)).to.equal(
-        confirmWinnerTimestamp!.timestamp + monoNFTMetadata.expiresDuration
+        confirmWinnerTimestamp!.timestamp + (1000 * 60 * 60 * 24 * 365) / 2
       )
 
       expect(await monoNFTContract.ownerOf(currentTokenId)).to.equal(
@@ -482,7 +519,7 @@ describe('MonoNFT', () => {
     let tokenId: BigNumberish
 
     beforeEach(async () => {
-      const monoNFTMetadata: IMonoNFT.MonoNFTStruct = {
+      const monoNFTMetadata = {
         donor: user1.address,
         //半年
         expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
@@ -496,7 +533,13 @@ describe('MonoNFT', () => {
         ],
       }
       // ここで新しいNFTを登録
-      await monoNFTContract.register(monoNFTMetadata, admin.address)
+      await monoNFTContract.register(
+        monoNFTMetadata.donor,
+        monoNFTMetadata.expiresDuration,
+        monoNFTMetadata.uri,
+        monoNFTMetadata.sharesOfCommunityToken,
+        admin.address
+      )
       tokenId = await monoNFTContract.totalSupply() // 最新のtokenIdを取得
     })
 

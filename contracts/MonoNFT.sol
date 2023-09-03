@@ -19,7 +19,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     address public auctionAdminAddress;
     address public communityTreasuryAddress;
 
-    mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
+    mapping(uint256 => MonoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
     mapping(uint256 => Winner) public _latestWinner;
     mapping(uint256 => Winner[]) public _historyOfWinners;
 
@@ -77,18 +77,32 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function register(
-        monoNFT calldata _monoNFT,
+        address donor,
+        uint64 expiresDuration,
+        string memory uri,
+        ShareOfCommunityToken[] memory sharesOfCommunityToken,
         address owner
     )
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
-        sharesOfCommunityTokenRatio(_monoNFT.sharesOfCommunityToken)
+        sharesOfCommunityTokenRatio(sharesOfCommunityToken)
     {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
+
         _mint(owner, newTokenId);
-        _monoNFTs[newTokenId] = _monoNFT;
-        emit Register(newTokenId, _monoNFT);
+
+        MonoNFT storage newMonoNFT = _monoNFTs[newTokenId]; // Using storage here
+        newMonoNFT.tokenId = newTokenId;
+        newMonoNFT.donor = donor;
+        newMonoNFT.expiresDuration = expiresDuration;
+        newMonoNFT.uri = uri;
+        newMonoNFT.status = MonoNFTStatus.READY;
+        for (uint i = 0; i < sharesOfCommunityToken.length; i++) {
+            newMonoNFT.sharesOfCommunityToken.push(sharesOfCommunityToken[i]);
+        }
+
+        emit Register(newTokenId, newMonoNFT);
     }
 
     function changeSharesOfCommunityToken(
@@ -99,7 +113,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         onlyRole(DEFAULT_ADMIN_ROLE)
         sharesOfCommunityTokenRatio(sharesOfCommunityToken)
     {
-        monoNFT storage monoNFT = _monoNFTs[tokenId];
+        MonoNFT storage monoNFT = _monoNFTs[tokenId];
         delete monoNFT.sharesOfCommunityToken;
         for (uint256 i = 0; i < sharesOfCommunityToken.length; i++) {
             monoNFT.sharesOfCommunityToken.push(sharesOfCommunityToken[i]);
@@ -133,7 +147,7 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function claim(uint256 tokenId) external onlyMonoAuctionMember {
-        monoNFT storage monoNFT = _monoNFTs[tokenId];
+        MonoNFT storage monoNFT = _monoNFTs[tokenId];
         require(
             monoNFT.status == MonoNFTStatus.CONFIRMED,
             "MonoNFT: Status should be confirmed"
@@ -196,8 +210,8 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         }
     }
 
-    function getNFTs() external view returns (monoNFT[] memory) {
-        monoNFT[] memory nfts = new monoNFT[](_tokenIds.current());
+    function getNFTs() external view returns (MonoNFT[] memory) {
+        MonoNFT[] memory nfts = new MonoNFT[](_tokenIds.current());
         for (uint256 i = 0; i < _tokenIds.current(); i++) {
             nfts[i] = _monoNFTs[i + 1];
         }
