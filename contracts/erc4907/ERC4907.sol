@@ -37,7 +37,7 @@ abstract contract ERC4907 is IERC4907, ERC721Enumerable {
     /// @param tokenId The NFT to get the user address for
     /// @return The user address for this NFT
     function userOf(uint256 tokenId) public view virtual returns (address) {
-        if (uint256(_users[tokenId].expires) >= block.timestamp) {
+        if (userExpires(tokenId) >= block.timestamp) {
             return _users[tokenId].user;
         } else {
             return address(0);

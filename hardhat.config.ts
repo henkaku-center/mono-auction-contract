@@ -9,7 +9,15 @@ const config: HardhatUserConfig = {
 export default config
 
 module.exports = {
-  solidity: '0.8.18',
+  solidity: {
+    version: '0.8.18',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
+  },
   networks: {
     hardhat: {
       chainId: 1337,

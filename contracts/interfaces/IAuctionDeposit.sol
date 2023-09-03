@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import "./IMonoNFT.sol";
 
 pragma solidity ^0.8.18;
 
@@ -29,8 +30,13 @@ interface IAuctionDeposit {
     // Move deposit balance from the claimer to the exhibitor(?)
     /// @param from: The address of the winner
     /// @param amount: The amount of Community Token to pay
+    /// @param sharesOfCommunityToken: The shares of Community Token to pay
     /// @dev MonoNFTコントラクトからのみ呼び出し可能
-    function payForClaim(address from, uint256 amount) external;
+    function payForClaim(
+        address from,
+        uint256 amount,
+        IMonoNFT.ShareOfCommunityToken[] calldata sharesOfCommunityToken
+    ) external;
 
     // Withdraw Community Token from the contract
     function withdraw(uint256 amount) external;

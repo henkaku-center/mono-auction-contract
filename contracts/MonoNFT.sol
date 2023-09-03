@@ -16,9 +16,11 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
 
     address public auctionDepositContractAddress;
     address public membershipNFTAddress;
+    address public auctionAdminAddress;
 
     mapping(uint256 => monoNFT) public _monoNFTs; // tokenIdとMonoNFTを紐付けるmapping
-    mapping(uint256 => Winner) public _latestWinners;
+    mapping(uint256 => Winner) public _latestWinner;
+    mapping(uint256 => Winner[]) public _historyOfWinners;
 
     constructor(
         string memory _name,
@@ -35,6 +37,20 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         _;
     }
 
+    modifier sharesOfCommunityTokenRatio(
+        ShareOfCommunityToken[] memory sharesOfCommunityToken
+    ) {
+        uint8 totalRatio = 0;
+        for (uint256 i = 0; i < sharesOfCommunityToken.length; i++) {
+            totalRatio += sharesOfCommunityToken[i].shareRatio;
+        }
+        require(
+            totalRatio == 100,
+            "MonoNFT: The total ratio of shares of community token should be 100"
+        );
+        _;
+    }
+
     function setMembershipNFTAddress(
         address _membershipNFTAddress
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -47,12 +63,40 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         auctionDepositContractAddress = _auctionDepositContractAddress;
     }
 
-    function register(monoNFT calldata _monoNFT) external {
+    function setAuctionAdminAddress(
+        address _auctionAdminAddress
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        auctionAdminAddress = _auctionAdminAddress;
+    }
+
+    function register(
+        monoNFT calldata _monoNFT,
+        address owner
+    )
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        sharesOfCommunityTokenRatio(_monoNFT.sharesOfCommunityToken)
+    {
         _tokenIds.increment();
         uint256 newTokenId = _tokenIds.current();
-        _mint(msg.sender, newTokenId);
+        _mint(owner, newTokenId);
         _monoNFTs[newTokenId] = _monoNFT;
         emit Register(newTokenId, _monoNFT);
+    }
+
+    function changeSharesOfCommunityToken(
+        uint256 tokenId,
+        ShareOfCommunityToken[] calldata sharesOfCommunityToken
+    )
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        sharesOfCommunityTokenRatio(sharesOfCommunityToken)
+    {
+        monoNFT storage monoNFT = _monoNFTs[tokenId];
+        delete monoNFT.sharesOfCommunityToken;
+        for (uint256 i = 0; i < sharesOfCommunityToken.length; i++) {
+            monoNFT.sharesOfCommunityToken.push(sharesOfCommunityToken[i]);
+        }
     }
 
     function confirmWinner(
@@ -62,8 +106,9 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // TODO: Check whether the winner has the auction member NFT
         _monoNFTs[tokenId].status = MonoNFTStatus.CONFIRMED;
-        uint256 expires = block.timestamp + _monoNFTs[tokenId].expiresDuration;
-        _latestWinners[tokenId] = Winner(winner, price, expires);
+        uint64 expires = uint64(block.timestamp) +
+            _monoNFTs[tokenId].expiresDuration;
+        _latestWinner[tokenId] = Winner(winner, price, expires);
         emit ConfirmWinner(tokenId, winner, price);
     }
 
@@ -81,22 +126,47 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     }
 
     function claim(uint256 tokenId) external onlyMonoAuctionMember {
-        Winner memory winnerInfo = _latestWinners[tokenId];
+        monoNFT storage monoNFT = _monoNFTs[tokenId];
+        require(
+            monoNFT.status == MonoNFTStatus.CONFIRMED,
+            "MonoNFT: Status should be confirmed"
+        );
+
+        Winner memory winnerInfo = _latestWinner[tokenId];
         require(
             winnerInfo.winner == msg.sender,
             "MonoNFT: You are not the winner"
         );
 
-        _monoNFTs[tokenId].status = MonoNFTStatus.CLAIMED;
+        MonoNFTRightType rightType = rightOf(tokenId);
+        uint256 historyLength = _historyOfWinners[tokenId].length;
 
         IAuctionDeposit(auctionDepositContractAddress).payForClaim(
-            msg.sender,
-            winnerInfo.price
+            winnerInfo.winner,
+            winnerInfo.price,
+            monoNFT.sharesOfCommunityToken
         );
 
-        setUser(tokenId, msg.sender, uint64(winnerInfo.expires));
+        // @dev If first claim of right of use, set all share to auction admin for next claims
+        // @dev only for right of use, setUser
+        if (rightType == MonoNFTRightType.RIGHT_OF_USE) {
+            setUser(tokenId, winnerInfo.winner, winnerInfo.expires);
+            if (historyLength == 0) {
+                delete monoNFT.sharesOfCommunityToken;
+                monoNFT.sharesOfCommunityToken.push(
+                    ShareOfCommunityToken({
+                        shareHolder: auctionAdminAddress,
+                        shareRatio: 100
+                    })
+                );
+            }
+        }
 
-        emit Claim(tokenId, msg.sender, winnerInfo.price);
+        monoNFT.status = MonoNFTStatus.CLAIMED;
+
+        _historyOfWinners[tokenId].push(winnerInfo);
+
+        emit Claim(tokenId, winnerInfo.winner, winnerInfo.price);
     }
 
     function updateMonoNFTStatus(
@@ -106,8 +176,17 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         _monoNFTs[tokenId].status = status;
     }
 
-    function isExpired(uint256 tokenId) external view returns (bool) {
-        return userExpires(tokenId) < block.timestamp;
+    function isExpired(uint256 tokenId) public view returns (bool) {
+        return userExpires(tokenId) < uint64(block.timestamp);
+    }
+
+    function rightOf(uint256 tokenId) public view returns (MonoNFTRightType) {
+        address owner = ownerOf(tokenId);
+        if (owner == auctionAdminAddress) {
+            return MonoNFTRightType.RIGHT_OF_USE;
+        } else {
+            return MonoNFTRightType.RIGHT_OF_OWN;
+        }
     }
 
     function getNFTs() external view returns (monoNFT[] memory) {
@@ -130,15 +209,17 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
         return _monoNFTs[tokenId].uri;
     }
 
-    // @dev 使用期限内の場合、落札者のアドレスを返す. Return address of user if it is within the expiration date
+    // @dev 使用期限内の場合、userOfのアドレスを返す. Return address of user if it is within the expiration date
     function ownerOf(
         uint256 tokenId
     ) public view override(ERC721, IERC721) returns (address) {
         address user = userOf(tokenId);
-        uint64 expires = userExpires(tokenId);
-        if (expires >= block.timestamp && user != address(0)) {
+        if (user != address(0)) {
             return user;
+        } else {
+            address owner = _ownerOf(tokenId);
+            require(owner != address(0), "ERC721: invalid token ID");
+            return owner;
         }
-        super;
     }
 }
