@@ -4,7 +4,7 @@ import {
   IMonoNFT,
   MockERC20,
   MonoNFT,
-  MockERC1155
+  MockERC1155,
 } from '../typechain-types'
 import { ethers } from 'hardhat'
 import { parseEther } from 'ethers'
@@ -35,7 +35,7 @@ describe('MonoNFT', () => {
     tokenContract = await ethers.deployContract('MockERC20', [
       'My Token',
       'MTK',
-      initialSupply
+      initialSupply,
     ])
     await tokenContract.waitForDeployment()
 
@@ -63,13 +63,13 @@ describe('MonoNFT', () => {
       'mono',
       1,
       2,
-      3
+      3,
     ])
     await monoNFTContract.waitForDeployment()
 
     // AuctionDepositのデプロイ
     auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress()
+      await monoNFTContract.getAddress(),
     ])
     await auctionDepositContract.waitForDeployment()
 
@@ -171,9 +171,9 @@ describe('MonoNFT', () => {
       sharesOfCommunityToken: [
         {
           shareHolder: user1.address,
-          shareRatio: 100
-        }
-      ]
+          shareRatio: 100,
+        },
+      ],
     }
 
     expect(
@@ -205,12 +205,12 @@ describe('MonoNFT', () => {
     const sharesOfCommunityToken = [
       {
         shareHolder: user1.address,
-        shareRatio: 50
+        shareRatio: 50,
       },
       {
         shareHolder: user2.address,
-        shareRatio: 10
-      }
+        shareRatio: 10,
+      },
     ]
     const monoNFTMetadata = {
       donor: user1.address,
@@ -218,7 +218,7 @@ describe('MonoNFT', () => {
       expiresDuration: (1000 * 60 * 60 * 24 * 365) / 2,
       uri: 'https://metadata.uri',
       status: 0,
-      sharesOfCommunityToken
+      sharesOfCommunityToken,
     }
 
     await expect(
@@ -257,9 +257,9 @@ describe('MonoNFT', () => {
           sharesOfCommunityToken: [
             {
               shareHolder: user1.address,
-              shareRatio: 100
-            }
-          ]
+              shareRatio: 100,
+            },
+          ],
         }
         await monoNFTContract
           .connect(admin)
@@ -323,9 +323,9 @@ describe('MonoNFT', () => {
         sharesOfCommunityToken: [
           {
             shareHolder: user1.address,
-            shareRatio: 100
-          }
-        ]
+            shareRatio: 100,
+          },
+        ],
       }
 
       const registerMonoNFT = async () => {
@@ -504,13 +504,13 @@ describe('MonoNFT', () => {
         sharesOfCommunityToken: [
           {
             shareHolder: user2.address,
-            shareRatio: 40
+            shareRatio: 40,
           },
           {
             shareHolder: treasury.address,
-            shareRatio: 60
-          }
-        ]
+            shareRatio: 60,
+          },
+        ],
       }
 
       const registerMonoNFT = async () => {
@@ -670,9 +670,9 @@ describe('MonoNFT', () => {
         sharesOfCommunityToken: [
           {
             shareHolder: user1.address,
-            shareRatio: 100
-          }
-        ]
+            shareRatio: 100,
+          },
+        ],
       }
       // ここで新しいNFTを登録
       await monoNFTContract.register(
