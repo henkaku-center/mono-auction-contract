@@ -33,7 +33,8 @@ interface IMonoNFT is IERC4907, IAccessControl {
     /// @param donor: monoの寄贈者, Donor of the mono
     /// @param expiresDuration: monoNFTのデフォルトの利用権保有期間, Default expires duration of the monoNFT
     /// @param uri: monoNFTのトークンURI, Token uri of the monoNFT
-    struct monoNFT {
+    struct MonoNFT {
+        uint256 tokenId;
         address donor;
         uint64 expiresDuration;
         string uri;
@@ -68,7 +69,7 @@ interface IMonoNFT is IERC4907, IAccessControl {
     );
 
     // Emit when a monoNFT is registered.
-    event Register(uint256 indexed tokenId, monoNFT _monoNFT);
+    event Register(uint256 indexed tokenId, MonoNFT _monoNFT);
 
     // Emit when a nft successfly claimed by the winner of an auction.
     // オークション落札者がNFTを正常に引き取ったときに発行。
@@ -87,9 +88,19 @@ interface IMonoNFT is IERC4907, IAccessControl {
     ) external;
 
     // Admin register a monoNFT
-    /// @param _monoNFT: monoNFTの情報, The information of the monoNFT
+    /// @param donor: monoの寄贈者, Donor of the mono
+    /// @param expiresDuration: monoNFTのデフォルトの利用権保有期間, Default expires duration of the monoNFT
+    /// @param uri: monoNFTのトークンURI, Token uri of the monoNFT
+    /// @param sharesOfCommunityToken: コミュニティトークンの分配先と割合, The shares of Community Token
+    /// @param owner: monoNFTのオーナー, Owner of the monoNFT
     /// @dev 管理者のみがこの関数実行可能, Only admin can call this function
-    function register(monoNFT calldata _monoNFT, address owner) external;
+    function register(
+        address donor,
+        uint64 expiresDuration,
+        string memory uri,
+        ShareOfCommunityToken[] memory sharesOfCommunityToken,
+        address owner
+    ) external;
 
     // Admin confirm the winner of an auction and set price, expires
     /// @param winner: オークション落札者, The winner of an auction
@@ -129,5 +140,5 @@ interface IMonoNFT is IERC4907, IAccessControl {
     function isExpired(uint256 tokenId) external view returns (bool);
 
     // Get the monoNFTs
-    function getNFTs() external view returns (monoNFT[] memory);
+    function getNFTs() external view returns (MonoNFT[] memory);
 }

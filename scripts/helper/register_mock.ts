@@ -16,7 +16,7 @@ const main = async () => {
 
   // monoNFTのregister
 
-  const monoNFTData1: IMonoNFT.MonoNFTStruct = {
+  const monoNFTData1 = {
     donor: donor.address,
     expiresDuration: 1000 * 60 * 60 * 24 * 7,
     uri: 'ipfs://QmR9gMFyfVzvbzzretUmQpicc1HAiduqF157YwFDb4fKH9',
@@ -29,7 +29,7 @@ const main = async () => {
     ],
   }
 
-  const monoNFTData2: IMonoNFT.MonoNFTStruct = {
+  const monoNFTData2 = {
     donor: user2.address,
     expiresDuration: 1000 * 60,
     uri: 'ipfs://QmbaSafFsRfo13KWHYdd8Mhkcih2GFHLKij7fEyNAWU2Bo',
@@ -48,11 +48,27 @@ const main = async () => {
 
   const monoNFTContract = await ethers.getContractAt('MonoNFT', monoNFTAddress)
   await (
-    await monoNFTContract.connect(admin).register(monoNFTData1, admin.address)
+    await monoNFTContract
+      .connect(admin)
+      .register(
+        monoNFTData1.donor,
+        monoNFTData1.expiresDuration,
+        monoNFTData1.uri,
+        monoNFTData1.sharesOfCommunityToken,
+        admin.address
+      )
   ).wait()
   await new Promise((resolve) => setTimeout(resolve, 500))
   await (
-    await monoNFTContract.connect(admin).register(monoNFTData2, user2.address)
+    await monoNFTContract
+      .connect(admin)
+      .register(
+        monoNFTData2.donor,
+        monoNFTData2.expiresDuration,
+        monoNFTData2.uri,
+        monoNFTData2.sharesOfCommunityToken,
+        user2.address
+      )
   ).wait()
   await new Promise((resolve) => setTimeout(resolve, 500))
 
