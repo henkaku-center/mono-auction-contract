@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat'
+import { ethers, network, upgrades } from 'hardhat'
 import {
   AuctionDeposit,
   MockERC20,
@@ -14,7 +14,7 @@ async function main() {
   let monoNFTContract: MonoNFT
   let membershipNFT: MockERC1155
 
-  const { admin, communityTresury } = LocalWalletAddresses()
+  const { admin, communityTreasury } = LocalWalletAddresses()
 
   tokenContract = await ethers.deployContract('MockERC20', [
     'My Token',
@@ -26,17 +26,26 @@ async function main() {
   membershipNFT = await ethers.deployContract('MockERC1155')
   await membershipNFT.waitForDeployment()
 
-  monoNFTContract = await ethers.deployContract('MonoNFT', [
-    'monoNFT',
-    'mono',
-    1,
-    2,
-    3,
-  ])
+  const MonoNFTFactory = await ethers.getContractFactory('MonoNFT')
+  monoNFTContract = (await upgrades.deployProxy(
+    MonoNFTFactory,
+    ['monoNFT', 'MONO'],
+    {
+      initializer: 'initialize',
+    }
+  )) as any
+  await monoNFTContract.waitForDeployment()
 
-  auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-    await monoNFTContract.getAddress(),
-  ])
+  const AuctionDepositFactory = await ethers.getContractFactory(
+    'AuctionDeposit'
+  )
+  auctionDepositContract = (await upgrades.deployProxy(
+    AuctionDepositFactory,
+    [await monoNFTContract.getAddress()],
+    {
+      initializer: 'initialize',
+    }
+  )) as any
   await auctionDepositContract.waitForDeployment()
 
   // MonoNFTの初期設定
@@ -52,15 +61,10 @@ async function main() {
   ).wait()
   await (await monoNFTContract.setAuctionAdminAddress(admin.address)).wait()
   await (
-    await monoNFTContract.setCommunityTreasuryAddress(communityTresury.address)
+    await monoNFTContract.setCommunityTreasuryAddress(communityTreasury.address)
   ).wait()
 
   // AuctionDepositの初期設定
-  await (
-    await auctionDepositContract.setCommunityTokenAddress(
-      await tokenContract.getAddress()
-    )
-  ).wait()
   await (
     await auctionDepositContract.setCommunityTokenAddress(
       await tokenContract.getAddress()

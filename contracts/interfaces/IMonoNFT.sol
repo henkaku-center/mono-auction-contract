@@ -2,11 +2,10 @@
 
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/access/IAccessControl.sol";
-
 import "./IERC4907.sol";
+import "@openzeppelin/contracts-upgradeable/access/IAccessControlUpgradeable.sol";
 
-interface IMonoNFT is IERC4907, IAccessControl {
+interface IMonoNFT is IERC4907, IAccessControlUpgradeable {
     // The status of monoNFT
     /// @param READY: オークション前, Before auction
     /// @param IN_AUCTION: オークション中, In auction

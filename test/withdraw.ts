@@ -1,4 +1,4 @@
-import { ethers } from 'hardhat'
+import { ethers, upgrades } from 'hardhat'
 import { expect, use } from 'chai'
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers'
 import {
@@ -43,20 +43,28 @@ describe('AuctionWithdraw', function () {
     await membershipNFT.waitForDeployment()
     await (await membershipNFT.mint(user1.address, 1)).wait()
 
-    // MonoNFTのデプロイ
-    monoNFTContract = await ethers.deployContract('MonoNFT', [
-      'monoNFT',
-      'mono',
-      1,
-      2,
-      3,
-    ])
+    // monoNFTのデプロイ
+    const MonoNFTFactory = await ethers.getContractFactory('MonoNFT')
+    monoNFTContract = (await upgrades.deployProxy(
+      MonoNFTFactory,
+      ['monoNFT', 'mono'],
+      {
+        initializer: 'initialize',
+      }
+    )) as any
     await monoNFTContract.waitForDeployment()
 
-    // AuctionDepositのデプロイ
-    auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress(),
-    ])
+    // auctionDepositのデプロイ
+    const AuctionDepositFactory = await ethers.getContractFactory(
+      'AuctionDeposit'
+    )
+    auctionDepositContract = (await upgrades.deployProxy(
+      AuctionDepositFactory,
+      [await monoNFTContract.getAddress()],
+      {
+        initializer: 'initialize',
+      }
+    )) as any
     await auctionDepositContract.waitForDeployment()
 
     // MonoNFTの初期設定
@@ -71,6 +79,9 @@ describe('AuctionWithdraw', function () {
       )
     ).wait()
     await (await monoNFTContract.setAuctionAdminAddress(admin.address)).wait()
+    await (await monoNFTContract.setBasicMembershipTokenId(1)).wait()
+    await (await monoNFTContract.setSilverMembershipTokenId(2)).wait()
+    await (await monoNFTContract.setGoldMembershipTokenId(3)).wait()
 
     // AuctionDepositの初期設定
     await (

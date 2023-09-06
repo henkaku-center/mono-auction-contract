@@ -6,10 +6,11 @@ import "./erc4907/ERC4907.sol";
 import "./interfaces/IMonoNFT.sol";
 import "./interfaces/IAuctionDeposit.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
+contract MonoNFT is Initializable, ERC4907, IMonoNFT, AccessControlUpgradeable {
     using Counters for Counters.Counter;
 
     Counters.Counter private _tokenIds; // tokenIdのカウンターを管理
@@ -27,17 +28,13 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
     mapping(uint256 => Winner) public _latestWinner;
     mapping(uint256 => Winner[]) public _historyOfWinners;
 
-    constructor(
+    function initialize(
         string memory _name,
-        string memory _symbol,
-        uint256 _basicMembershipTokenId,
-        uint256 _silverMembershipTokenId,
-        uint256 _goldMembershipTokenId
-    ) ERC721(_name, _symbol) {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        basicMembershipTokenId = _basicMembershipTokenId;
-        silverMembershipTokenId = _silverMembershipTokenId;
-        goldMembershipTokenId = _goldMembershipTokenId;
+        string memory _symbol
+    ) public initializer {
+        __ERC721_init(_name, _symbol);
+        __AccessControl_init();
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
     modifier onlyMonoAuctionMember() {
@@ -271,6 +268,10 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
                     })
                 );
             }
+        } else if (rightType == MonoNFTRightType.RIGHT_OF_OWN) {
+            address currentOwner = ownerOf(tokenId);
+            _approve(winnerInfo.winner, tokenId);
+            _safeTransfer(currentOwner, winnerInfo.winner, tokenId, "");
         }
 
         monoNFT.status = MonoNFTStatus.CLAIMED;
@@ -316,20 +317,31 @@ contract MonoNFT is ERC4907, IMonoNFT, AccessControl {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC4907, AccessControl) returns (bool) {
+    )
+        public
+        view
+        virtual
+        override(ERC4907, AccessControlUpgradeable)
+        returns (bool)
+    {
         return super.supportsInterface(interfaceId);
     }
 
     function tokenURI(
         uint256 tokenId
-    ) public view override(ERC721) returns (string memory) {
+    ) public view override(ERC721Upgradeable) returns (string memory) {
         return _monoNFTs[tokenId].uri;
     }
 
     // @dev 使用期限内の場合、userOfのアドレスを返す. Return address of user if it is within the expiration date
     function ownerOf(
         uint256 tokenId
-    ) public view override(ERC721, IERC721) returns (address) {
+    )
+        public
+        view
+        override(ERC721Upgradeable, IERC721Upgradeable)
+        returns (address)
+    {
         address user = userOf(tokenId);
         if (user != address(0)) {
             return user;

@@ -6,7 +6,7 @@ import {
   MonoNFT,
   MockERC1155,
 } from '../typechain-types'
-import { ethers } from 'hardhat'
+import { ethers, upgrades } from 'hardhat'
 import { parseEther } from 'ethers'
 import { expect } from 'chai'
 import { assert } from 'chai'
@@ -57,20 +57,28 @@ describe('MonoNFT', () => {
     await (await membershipNFT.mint(user1.address, 1)).wait()
     await (await membershipNFT.mint(user2.address, 1)).wait()
 
-    // MonoNFTのデプロイ
-    monoNFTContract = await ethers.deployContract('MonoNFT', [
-      'monoNFT',
-      'mono',
-      1,
-      2,
-      3,
-    ])
+    // monoNFTのデプロイ
+    const MonoNFTFactory = await ethers.getContractFactory('MonoNFT')
+    monoNFTContract = (await upgrades.deployProxy(
+      MonoNFTFactory,
+      ['monoNFT', 'mono'],
+      {
+        initializer: 'initialize',
+      }
+    )) as any
     await monoNFTContract.waitForDeployment()
 
-    // AuctionDepositのデプロイ
-    auctionDepositContract = await ethers.deployContract('AuctionDeposit', [
-      await monoNFTContract.getAddress(),
-    ])
+    // auctionDepositのデプロイ
+    const AuctionDepositFactory = await ethers.getContractFactory(
+      'AuctionDeposit'
+    )
+    auctionDepositContract = (await upgrades.deployProxy(
+      AuctionDepositFactory,
+      [await monoNFTContract.getAddress()],
+      {
+        initializer: 'initialize',
+      }
+    )) as any
     await auctionDepositContract.waitForDeployment()
 
     // MonoNFTの初期設定
@@ -88,6 +96,9 @@ describe('MonoNFT', () => {
     await (
       await monoNFTContract.setCommunityTreasuryAddress(treasury.address)
     ).wait()
+    await (await monoNFTContract.setBasicMembershipTokenId(1)).wait()
+    await (await monoNFTContract.setSilverMembershipTokenId(2)).wait()
+    await (await monoNFTContract.setGoldMembershipTokenId(3)).wait()
 
     // AuctionDepositの初期設定
     await (

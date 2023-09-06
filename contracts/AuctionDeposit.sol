@@ -6,22 +6,29 @@ import "./interfaces/IMonoNFT.sol";
 import "./interfaces/IAuctionDeposit.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract AuctionDeposit is IAuctionDeposit, ReentrancyGuard {
+contract AuctionDeposit is
+    Initializable,
+    IAuctionDeposit,
+    ReentrancyGuardUpgradeable
+{
     using SafeERC20 for IERC20;
 
     address public communityTokenAddr;
     address public monoNFTAddr;
     address public auctionAdminAddr;
-    uint256 public maxDeposit = 2500 * 10 ** 18;
+    uint256 public maxDeposit;
     bool public locked;
 
     // This mapping tracks the deposit info of each user
     mapping(address => uint256) private _deposits;
 
-    constructor(address _monoNFTAddr) {
+    function initialize(address _monoNFTAddr) public initializer {
+        __ReentrancyGuard_init();
         monoNFTAddr = _monoNFTAddr;
+        maxDeposit = 2500 * 10 ** 18;
     }
 
     modifier onlyMonoAuctionAdmin() {

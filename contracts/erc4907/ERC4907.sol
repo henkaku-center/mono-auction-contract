@@ -2,9 +2,9 @@
 pragma solidity ^0.8.18;
 
 import "../interfaces/IERC4907.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 
-abstract contract ERC4907 is IERC4907, ERC721Enumerable {
+abstract contract ERC4907 is IERC4907, ERC721EnumerableUpgradeable {
     struct UserInfo {
         address user; // address of user role
         uint64 expires; // unix timestamp, user expires
@@ -66,7 +66,7 @@ abstract contract ERC4907 is IERC4907, ERC721Enumerable {
         address to,
         uint256 tokenId,
         uint256 batchSize
-    ) internal virtual override(ERC721Enumerable) {
+    ) internal virtual override(ERC721EnumerableUpgradeable) {
         super._beforeTokenTransfer(from, to, tokenId, batchSize);
 
         if (from != to && _users[tokenId].user != address(0)) {

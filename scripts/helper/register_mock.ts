@@ -1,13 +1,12 @@
 import { ethers } from 'hardhat'
-import { IMonoNFT } from '../../typechain-types'
 import { LocalWalletAddresses } from './address'
 import { parseEther } from 'ethers'
 
 const main = async () => {
-  const monoNFTAddress = '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0'
+  const monoNFTAddress = '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9'
   const mockERC20 = '0x5FbDB2315678afecb367f032d93F642f64180aa3'
   const mockERC1155 = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512'
-  const { admin, user1, user2, donor, communityTresury } =
+  const { admin, user1, user2, donor, communityTreasury } =
     LocalWalletAddresses()
 
   if (!monoNFTAddress || !mockERC20 || !mockERC1155) {
@@ -27,7 +26,7 @@ const main = async () => {
         shareRatio: 50,
       },
       {
-        shareHolder: communityTresury.address,
+        shareHolder: communityTreasury.address,
         shareRatio: 50,
       },
     ],
@@ -44,7 +43,7 @@ const main = async () => {
         shareRatio: 50,
       },
       {
-        shareHolder: communityTresury.address,
+        shareHolder: communityTreasury.address,
         shareRatio: 50,
       },
     ],
