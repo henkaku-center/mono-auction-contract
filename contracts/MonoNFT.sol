@@ -293,7 +293,7 @@ contract MonoNFT is Initializable, ERC4907, IMonoNFT, AccessControlUpgradeable {
     }
 
     function rightOf(uint256 tokenId) public view returns (MonoNFTRightType) {
-        address owner = ownerOf(tokenId);
+        address owner = _ownerOf(tokenId);
         if (owner == auctionAdminAddress) {
             return MonoNFTRightType.RIGHT_OF_USE;
         } else {
